@@ -1,8 +1,31 @@
 # Req
-一个优雅且简洁的Go HTTP请求库。
+An elegant and concise Go HTTP request library.
+一个优雅并简洁的Go HTTP请求库。
 
 ```shell script
 go get -u github.com/zhshch2002/goreq
+```
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/zhshch2002/goreq"
+)
+
+func main() {
+	res := req.Do(req.Post("https://httpbin.org/post?hello=world").
+		SetFormBody(map[string]string{
+			"aaa": "123",
+		}).AddParams(map[string]string{
+		"bbb": "312",
+	}).AddHeader("Req-Client", "GoReq"))
+	fmt.Println(res.Text)
+	j, err := res.JSON()
+	fmt.Println(err)
+	fmt.Println(j.Get("form"))
+}
 ```
 
 ## Feature

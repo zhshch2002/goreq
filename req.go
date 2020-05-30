@@ -118,6 +118,13 @@ func (s *Request) AddParams(v map[string]string) *Request {
 	return s
 }
 
+func (s *Request) SetBasicAuth(username, password string) *Request {
+	if s.Err == nil {
+		s.Request.SetBasicAuth(username, password)
+	}
+	return s
+}
+
 func (s *Request) SetBody(b io.Reader) *Request {
 	if s.Err == nil {
 		rc, ok := b.(io.ReadCloser)

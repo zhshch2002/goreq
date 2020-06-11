@@ -20,6 +20,7 @@ go get -u github.com/zhshch2002/goreq
 ### TODO
 * Download & Upload
 * Format Print
+* Multipart Support
 
 ## Usage
 

@@ -56,6 +56,9 @@ func (s *Response) Error() error {
 
 // DecodeAndParas decodes the body to text and try to parse it to html or json.
 func (s *Response) DecodeAndParse() error {
+	if s.Err != nil {
+		return s.Err
+	}
 	if len(s.Body) == 0 {
 		return nil
 	}

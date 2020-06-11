@@ -3,9 +3,12 @@ package req
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"strings"
 )
@@ -186,6 +189,85 @@ func (s *Request) SetJsonBody(v interface{}) *Request {
 		s.AddHeader("Content-Type", "application/json")
 	}
 	return s
+}
+
+type FormField struct {
+	Name, Value string
+}
+
+type FormFile struct {
+	FieldName, FileName, ContentType string
+	File                             io.Reader
+}
+
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
+}
+
+func (s *Request) SetMultipartBody(data ...interface{}) *Request {
+	if s.Err == nil {
+		buff := bytes.NewBuffer([]byte{})
+		wr := multipart.NewWriter(buff)
+		for _, v := range data {
+			switch v.(type) {
+			case FormField:
+				s.Err = wr.WriteField(v.(FormField).Name, v.(FormField).Value)
+				if s.Err != nil {
+					if Debug {
+						fmt.Println(s.Err)
+					}
+					return s
+				}
+			case FormFile:
+				var w io.Writer
+				h := make(textproto.MIMEHeader)
+				h.Set("Content-Disposition",
+					fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+						escapeQuotes(v.(FormFile).FieldName), escapeQuotes(v.(FormFile).FieldName)))
+				if v.(FormFile).ContentType != "" {
+					h.Set("Content-Type", v.(FormFile).ContentType)
+				} else {
+					h.Set("Content-Type", "application/octet-stream")
+				}
+				w, s.Err = wr.CreatePart(h)
+				if s.Err != nil {
+					if Debug {
+						fmt.Println(s.Err)
+					}
+					return s
+				}
+				_, s.Err = io.Copy(w, v.(FormFile).File)
+				if s.Err != nil {
+					if Debug {
+						fmt.Println(s.Err)
+					}
+					return s
+				}
+			}
+		}
+		s.Err = wr.Close()
+		if s.Err != nil {
+			if Debug {
+				fmt.Println(s.Err)
+			}
+			return s
+		}
+		s.SetBody(buff)
+		s.Header.Set("Content-Type", wr.FormDataContentType())
+	}
+	return s
+}
+
+func (s *Request) Do() *Response {
+	return DefaultClient.Do(s)
+}
+
+func (s *Request) DoCallback(fn func(resp *Response)) {
+	go func() {
+		fn(DefaultClient.Do(s))
+	}()
 }
 
 //func (s *Request) Format(f fmt.State, c rune) {

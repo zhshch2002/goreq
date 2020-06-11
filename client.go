@@ -10,6 +10,8 @@ import (
 
 var DefaultClient = NewClient()
 
+var Debug = false //TODO
+
 func Do(req *Request) *Response {
 	return DefaultClient.Do(req)
 }
@@ -20,6 +22,7 @@ type Middleware func(*Client, Handler) Handler
 type Client struct {
 	cli        *http.Client
 	middleware []Middleware
+	handler    Handler
 }
 
 func NewClient() *Client {
@@ -38,19 +41,20 @@ func NewClient() *Client {
 		},
 		middleware: []Middleware{},
 	}
+	c.handler = basicHttpDo(c, nil)
 	return c
 }
 
-func (s *Client) Use(m Middleware) {
-	s.middleware = append(s.middleware, m)
+func (s *Client) Use(m ...Middleware) {
+	s.middleware = append(s.middleware, m...)
+	//s.handler = basicHttpDo(s, nil)
+	for i := len(s.middleware) - 1; i >= 0; i-- {
+		s.handler = s.middleware[i](s, s.handler)
+	}
 }
 
 func (s *Client) Do(req *Request) *Response {
-	var h = basicHttpDo(s, nil)
-	for i := len(s.middleware) - 1; i >= 0; i-- {
-		h = s.middleware[i](s, h)
-	}
-	res := h(req)
+	res := s.handler(req)
 	res.Err = res.DecodeAndParse()
 	return res
 }

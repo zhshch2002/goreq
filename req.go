@@ -19,6 +19,7 @@ func NewRequest(method, urladdr string) *Request {
 		Request:    req,
 		RespEncode: "",
 		ProxyURL:   "",
+		client:     DefaultClient,
 		Err:        err,
 		callback: func(resp *Response) *Response {
 			return resp
@@ -65,6 +66,7 @@ type Request struct {
 	Writer io.Writer
 
 	callback func(resp *Response) *Response
+	client   *Client
 
 	Err error
 }
@@ -270,8 +272,13 @@ func (s *Request) Callback(fn func(resp *Response) *Response) *Request {
 	return s
 }
 
+func (s *Request) SetClient(c *Client) *Request {
+	s.client = c
+	return s
+}
+
 func (s *Request) Do() *Response {
-	return s.callback(DefaultClient.Do(s))
+	return s.callback(s.client.Do(s))
 }
 
 //func (s *Request) Format(f fmt.State, c rune) {

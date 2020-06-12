@@ -132,7 +132,7 @@ func main() {
 After calling the request's `Do()`, it will return a `*Response` and execute Callback
 ```go
 func (s *Request) Do() *Response {
-	return s.callback(DefaultClient.Do(s))
+	return s.callback(s.client.Do(s))
 }
 ```
 
@@ -149,18 +149,22 @@ import (
 func main() {
 	resp := req.Get("https://example.com/").Do()
 	fmt.Println(resp.Text, resp.Err) // Get the decode text,same as `text,err:=resp.Txt()`
-	j, err := resp.JSON()
+
+	j, err := resp.JSON() // Parse as json with gjson
 	fmt.Println(resp.IsJSON(), j, err)
-	h, err := resp.HTML()
+
+	h, err := resp.HTML() // Parse as html with goquery
 	fmt.Println(resp.IsHTML(), h, err)
-	x, err := resp.XML()
+
+	x, err := resp.XML() // Parse as xml with xmlpath
 	fmt.Println(x, err)
+
 	var data struct {
 		Url string `json:"url" xml:"url"`
 	}
-	err = resp.BindJSON(&data)
+	err = resp.BindJSON(&data) // Parse as json
 	fmt.Println(data, err)
-	err = resp.BindXML(&data)
+	err = resp.BindXML(&data) // Parse as xml
 	fmt.Println(data, err)
 }
 ```

@@ -123,3 +123,44 @@ func main() {
 	fmt.Println(resp.Text)
 }
 ```
+
+## Response
+* type of(`req.Post("https://httpbin.org/post")`) is `*Request`
+* type of(`req.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
+* type of(`req.Post("https://httpbin.org/post").Do()`) is `*Response`
+
+After calling the request's `Do()`, it will return a `*Response` and execute Callback
+```go
+func (s *Request) Do() *Response {
+	return s.callback(DefaultClient.Do(s))
+}
+```
+
+The `*Response` contains the request and the decoded body.
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/zhshch2002/goreq"
+)
+
+func main() {
+	resp := req.Get("https://example.com/").Do()
+	fmt.Println(resp.Text, resp.Err) // Get the decode text,same as `text,err:=resp.Txt()`
+	j, err := resp.JSON()
+	fmt.Println(resp.IsJSON(), j, err)
+	h, err := resp.HTML()
+	fmt.Println(resp.IsHTML(), h, err)
+	x, err := resp.XML()
+	fmt.Println(x, err)
+	var data struct {
+		Url string `json:"url" xml:"url"`
+	}
+	err = resp.BindJSON(&data)
+	fmt.Println(data, err)
+	err = resp.BindXML(&data)
+	fmt.Println(data, err)
+}
+```

@@ -3,7 +3,7 @@
 ![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg)
 [![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
 
-An elegant and concise Go HTTP request library.
+An clean and simple Go HTTP request client library.
 一个优雅并简洁的Go HTTP请求库。
 
 ```shell script
@@ -12,11 +12,11 @@ go get -u github.com/zhshch2002/goreq
 
 ## Feature
 * Auto Charset Decode | 自动解码
-* Easy to set proxy for each req | 便捷代理设置
-* Parse HTML,JSON,XML | HTML、JSON、XML解析
-* Config req as chain | 链式配置请求
-* Multipart post support
-* Middleware | 中间件
+* [Easy to set proxy for each req | 便捷代理设置](#Request)
+* [Chain config request | 链式配置请求](#Request)
+* [Multipart post support](#Request)
+* [Parse HTML,JSON,XML | HTML、JSON、XML解析](#Response)
+* [Middleware | 中间件](#Middleware)
     * Cache | 缓存
     * Retry | 失败重试
     * Log | 日志
@@ -45,7 +45,7 @@ func main() {
 }
 ```
 
-## Request
+### Request
 
 ```go
 // Create a request
@@ -55,7 +55,7 @@ req.Put("https://httpbin.org/")
 // ...
 ```
 
-### Config chain
+#### Config chain
 ```go
 req.Get("https://httpbin.org/").
     AddHeader("Req-Client", "GoReq").
@@ -124,7 +124,7 @@ func main() {
 }
 ```
 
-## Response
+### Response
 * type of(`req.Post("https://httpbin.org/post")`) is `*Request`
 * type of(`req.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
 * type of(`req.Post("https://httpbin.org/post").Do()`) is `*Response`
@@ -171,3 +171,36 @@ func main() {
 	fmt.Println(data, err)
 }
 ```
+
+### Middleware
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/zhshch2002/goreq"
+)
+
+func main() {
+	// you can config `req.DefaultClient.Use()` to set global middleware
+	c := req.NewClient() // create a new client
+	c.Use(req.WithRandomUA()) // Add a builtin middleware
+	c.Use(func(client *req.Client, handler req.Handler) req.Handler { // Add another middleware
+		return func(r *req.Request) *req.Response {
+			fmt.Println("this is a middleware")
+			r.Header.Set("req", "goreq")
+			return handler(r)
+		}
+	})
+
+	txt, err := req.Get("https://httpbin.org/get").SetClient(c).Do().Txt()
+	fmt.Println(txt, err)
+}
+```
+#### Builtin middleware
+* `WithDebug()`
+* `WithCache(ca *cache.Cache)` Cache of `*Response` by go-cache
+* `WithRetry(maxTimes int, isRespOk func(*Response)` set `nil` for `isRespOk` means no check func
+* `WithProxy(p ...string)` set a list of proxy of it will follow `all_proxy` `https_proxy` and  `http_proxy` env
+* `WithRefererFiller()`
+* `WithRandomUA()`

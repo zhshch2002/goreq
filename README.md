@@ -7,10 +7,11 @@ go get -u github.com/zhshch2002/goreq
 ```
 
 ## Feature
-* Auto Decode | 自动解码
+* Auto Charset Decode | 自动解码
 * Easy to set proxy for each req | 便捷代理设置
 * Parse HTML,JSON,XML | HTML、JSON、XML解析
 * Config req as chain | 链式配置请求
+* Multipart post support
 * Middleware | 中间件
     * Cache | 缓存
     * Retry | 失败重试
@@ -20,7 +21,6 @@ go get -u github.com/zhshch2002/goreq
 ### TODO
 * Download & Upload
 * Format Print
-* Multipart Support
 
 ## Usage
 

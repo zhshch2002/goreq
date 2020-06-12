@@ -2,6 +2,8 @@ package req
 
 import (
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/saintfish/chardet"
 	"github.com/tidwall/gjson"
@@ -16,7 +18,8 @@ import (
 type Response struct {
 	*http.Response
 	// Body is the content of the Response
-	Body []byte
+	Body         []byte
+	NoDecodeBody []byte
 	// Text is the content of the Response parsed as string
 	Text string
 	// Request is the Req object from goribot of the response.Tip: there is another Request attr come from *http.Response
@@ -62,6 +65,7 @@ func (s *Response) DecodeAndParse() error {
 	if len(s.Body) == 0 {
 		return nil
 	}
+	s.NoDecodeBody = s.Body
 	contentType := strings.ToLower(s.Header.Get("Content-Type"))
 	if strings.Contains(contentType, "text/") ||
 		strings.Contains(contentType, "/json") {
@@ -99,6 +103,22 @@ func (s *Response) IsJSON() bool {
 	contentType := strings.ToLower(s.Header.Get("Content-Type"))
 	return strings.Contains(contentType, "/json")
 }
+
+func (s *Response) BindJSON(i interface{}) error {
+	if s.Err != nil {
+		return s.Err
+	}
+	return json.Unmarshal(s.Body, i)
+}
+
+func (s *Response) BindXML(i interface{}) error {
+	if s.Err != nil {
+		return s.Err
+	}
+	return xml.Unmarshal(s.Body, i)
+}
+
+// TODO Bind xml,json
 
 //func (s *Response) Format(f fmt.State, c rune) {
 //	if s == nil {

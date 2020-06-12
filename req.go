@@ -14,12 +14,15 @@ import (
 )
 
 func NewRequest(method, urladdr string) *Request {
-	req, err := http.NewRequest(method, urladdr, nil)
+	req, err := http.NewRequest(method, ModifyLink(urladdr), nil)
 	return &Request{
 		Request:    req,
 		RespEncode: "",
 		ProxyURL:   "",
 		Err:        err,
+		callback: func(resp *Response) *Response {
+			return resp
+		},
 	}
 }
 
@@ -60,6 +63,8 @@ type Request struct {
 	RespEncode string
 
 	Writer io.Writer
+
+	callback func(resp *Response) *Response
 
 	Err error
 }
@@ -260,14 +265,13 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 	return s
 }
 
-func (s *Request) Do() *Response {
-	return DefaultClient.Do(s)
+func (s *Request) Callback(fn func(resp *Response) *Response) *Request {
+	s.callback = fn
+	return s
 }
 
-func (s *Request) DoCallback(fn func(resp *Response)) {
-	go func() {
-		fn(DefaultClient.Do(s))
-	}()
+func (s *Request) Do() *Response {
+	return s.callback(DefaultClient.Do(s))
 }
 
 //func (s *Request) Format(f fmt.State, c rune) {

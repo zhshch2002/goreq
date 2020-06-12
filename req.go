@@ -267,7 +267,7 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 	return s
 }
 
-func (s *Request) Callback(fn func(resp *Response) *Response) *Request {
+func (s *Request) SetCallback(fn func(resp *Response) *Response) *Request {
 	s.callback = fn
 	return s
 }

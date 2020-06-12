@@ -115,7 +115,7 @@ func main() {
 				File:        bytes.NewReader([]byte("55555")),
 			},
 		).
-		Callback(func(resp *req.Response) *req.Response {
+		SetCallback(func(resp *req.Response) *req.Response {
 			fmt.Println("here is the call back func")
 			return resp
 		}).
@@ -148,7 +148,10 @@ import (
 
 func main() {
 	resp := req.Get("https://example.com/").Do()
-	fmt.Println(resp.Text, resp.Err) // Get the decode text,same as `text,err:=resp.Txt()`
+	if resp.Err != nil {
+		panic(resp.Err)
+	}
+	fmt.Println(resp.Text) // Get the decode text,same as `text,err:=resp.Txt()`
 
 	j, err := resp.JSON() // Parse as json with gjson
 	fmt.Println(resp.IsJSON(), j, err)

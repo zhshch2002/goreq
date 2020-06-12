@@ -32,7 +32,7 @@ func main() {
 				File:        bytes.NewReader([]byte("55555")),
 			},
 		).
-		Callback(func(resp *req.Response) *req.Response {
+		SetCallback(func(resp *req.Response) *req.Response {
 			fmt.Println("here is the call back func")
 			return resp
 		}).

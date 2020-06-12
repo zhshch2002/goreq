@@ -7,7 +7,10 @@ import (
 
 func main() {
 	resp := req.Get("https://example.com/").Do()
-	fmt.Println(resp.Text, resp.Err) // Get the decode text,same as `text,err:=resp.Txt()`
+	if resp.Err != nil {
+		panic(resp.Err)
+	}
+	fmt.Println(resp.Text) // Get the decode text,same as `text,err:=resp.Txt()`
 
 	j, err := resp.JSON() // Parse as json with gjson
 	fmt.Println(resp.IsJSON(), j, err)

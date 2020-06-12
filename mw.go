@@ -47,7 +47,7 @@ func WithRetry(maxTimes int, isRespOk func(*Response) bool) Middleware {
 				}
 				if (res.Err != nil || !ok) && res.Req.Err == nil {
 					if Debug {
-						fmt.Println("[Retry", i, "times] got error on request", req, res.Err)
+						fmt.Println("[Retry", i, "times] got error on request", req.URL, res.Err)
 					}
 					continue
 				} else {

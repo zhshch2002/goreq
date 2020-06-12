@@ -18,15 +18,15 @@ func TestMethods(t *testing.T) {
 		fmt.Println(resp.Text)
 		return resp
 	}
-	assert.Nil(t, Get("https://httpbin.org/get").Callback(cb).Do().Error())
-	assert.Nil(t, Post("https://httpbin.org/post").Callback(cb).Do().Error())
-	assert.Nil(t, Head("https://httpbin.org/head").Callback(cb).Do().Error())
-	assert.Nil(t, Put("https://httpbin.org/put").Callback(cb).Do().Error())
-	assert.Nil(t, Delete("https://httpbin.org/delete").Callback(cb).Do().Error())
-	assert.Nil(t, Connect("https://httpbin.org/connect").Callback(cb).Do().Error())
-	assert.Nil(t, Options("https://httpbin.org/options").Callback(cb).Do().Error())
-	assert.Nil(t, Trace("https://httpbin.org/trace").Callback(cb).Do().Error())
-	assert.Nil(t, Patch("https://httpbin.org/patch").Callback(cb).Do().Error())
+	assert.Nil(t, Get("https://httpbin.org/get").SetCallback(cb).Do().Error())
+	assert.Nil(t, Post("https://httpbin.org/post").SetCallback(cb).Do().Error())
+	assert.Nil(t, Head("https://httpbin.org/head").SetCallback(cb).Do().Error())
+	assert.Nil(t, Put("https://httpbin.org/put").SetCallback(cb).Do().Error())
+	assert.Nil(t, Delete("https://httpbin.org/delete").SetCallback(cb).Do().Error())
+	assert.Nil(t, Connect("https://httpbin.org/connect").SetCallback(cb).Do().Error())
+	assert.Nil(t, Options("https://httpbin.org/options").SetCallback(cb).Do().Error())
+	assert.Nil(t, Trace("https://httpbin.org/trace").SetCallback(cb).Do().Error())
+	assert.Nil(t, Patch("https://httpbin.org/patch").SetCallback(cb).Do().Error())
 }
 
 func TestGet(t *testing.T) {
@@ -45,7 +45,7 @@ func TestPost(t *testing.T) {
 
 func TestRequest_DoCallback(t *testing.T) {
 	s := make(chan struct{})
-	go Get("https://httpbin.org/get").Callback(func(resp *Response) *Response {
+	go Get("https://httpbin.org/get").SetCallback(func(resp *Response) *Response {
 		t.Log(resp.Text)
 		assert.Nil(t, resp.Err)
 		s <- struct{}{}

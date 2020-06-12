@@ -46,7 +46,9 @@ func WithRetry(maxTimes int, isRespOk func(*Response) bool) Middleware {
 					ok = isRespOk(res)
 				}
 				if (res.Err != nil || !ok) && res.Req.Err == nil {
-					fmt.Println("[Retry", i, "times] got error on request", req, res.Err)
+					if Debug {
+						fmt.Println("[Retry", i, "times] got error on request", req, res.Err)
+					}
 					continue
 				} else {
 					break
@@ -59,13 +61,15 @@ func WithRetry(maxTimes int, isRespOk func(*Response) bool) Middleware {
 
 func WithProxy(p ...string) Middleware {
 	var RandSrc int64
-	var envProxy = ""
+	var httpProxy = ""
+	var httpsProxy = ""
 	if e := os.Getenv("all_proxy"); e != "" {
-		envProxy = e
+		httpProxy = e
+		httpsProxy = e
 	} else if e := os.Getenv("https_proxy"); e != "" {
-		envProxy = e
+		httpsProxy = e
 	} else if e := os.Getenv("http_proxy"); e != "" {
-		envProxy = e
+		httpProxy = e
 	}
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
@@ -79,7 +83,11 @@ func WithProxy(p ...string) Middleware {
 				} else if len(p) == 1 {
 					req.SetProxy(p[0])
 				} else {
-					req.SetProxy(envProxy)
+					if req.URL.Scheme == "http" && httpProxy != "" {
+						req.SetProxy(httpProxy)
+					} else if req.URL.Scheme == "https" && httpProxy != "" {
+						req.SetProxy(httpsProxy)
+					}
 				}
 			}
 			res := h(req)

@@ -34,4 +34,5 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
+          name: Test on Go 1.14
           file: ./coverage.out

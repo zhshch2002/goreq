@@ -1,4 +1,4 @@
-module req
+module github.com/zhshch2002/goreq
 
 go 1.14
 

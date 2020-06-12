@@ -31,12 +31,18 @@ func TestResponse_HTML(t *testing.T) {
 	assert.True(t, htmlResp.IsHTML())
 	h, _ := htmlResp.HTML()
 	t.Log(h.Find("title").Text())
-	assert.NotEqual(t, h.Find("title").Length(), 0)
+	assert.NotEqual(t, 0, h.Find("title").Length())
 }
 
 func TestResponse_JSON(t *testing.T) {
 	assert.True(t, jsonResp.IsJSON())
 	t.Log(jsonResp.Text)
 	j, _ := jsonResp.JSON()
-	assert.Equal(t, j.Get("url").String(), "https://httpbin.org/get")
+	assert.Equal(t, "https://httpbin.org/get", j.Get("url").String())
+
+	var data struct {
+		Url string `json:"url"`
+	}
+	assert.Nil(t, jsonResp.BindJSON(&data))
+	assert.Equal(t, "https://httpbin.org/get", data.Url)
 }

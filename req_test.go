@@ -1,7 +1,10 @@
 package req
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"os"
 	"testing"
 )
@@ -52,4 +55,45 @@ func TestRequest_SetMultipartBody(t *testing.T) {
 	).Do()
 	t.Log(resp.Text)
 	assert.Nil(t, resp.Err)
+}
+
+func TestRequest_Do(t *testing.T) {
+	resp := Post("https://httpbin.org/post?a=1").
+		AddParams(map[string]string{
+			"b": "2",
+		}).
+		AddHeaders(map[string]string{
+			"req": "golang",
+		}).
+		AddCookie(&http.Cookie{
+			Name:  "c",
+			Value: "3",
+		}).
+		SetUA("goreq").
+		SetBasicAuth("goreq", "golang").
+		//SetProxy("http://127.0.0.1:1080/").
+		SetMultipartBody(
+			FormField{
+				Name:  "d",
+				Value: "4",
+			},
+			FormFile{
+				FieldName:   "e",
+				FileName:    "e.txt",
+				ContentType: "",
+				File:        bytes.NewReader([]byte("5")),
+			},
+		).
+		Do()
+	fmt.Println(resp.Text)
+	j, err := resp.JSON()
+	assert.Nil(t, err)
+	assert.Equal(t, "1", j.Get("args.a").String())
+	assert.Equal(t, "2", j.Get("args.b").String())
+	assert.Equal(t, "c=3", j.Get("headers.Cookie").String())
+	assert.Equal(t, "4", j.Get("form.d").String())
+	assert.Equal(t, "5", j.Get("files.e").String())
+	assert.Equal(t, "Basic Z29yZXE6Z29sYW5n", j.Get("headers.Authorization").String())
+	assert.Equal(t, "golang", j.Get("headers.Req").String())
+	assert.Equal(t, "goreq", j.Get("headers.User-Agent").String())
 }

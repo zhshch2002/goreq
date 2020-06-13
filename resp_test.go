@@ -1,7 +1,12 @@
 package req
 
 import (
+	"encoding/xml"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/xmlpath.v2"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"unicode/utf8"
 )
@@ -45,4 +50,24 @@ func TestResponse_JSON(t *testing.T) {
 	}
 	assert.Nil(t, jsonResp.BindJSON(&data))
 	assert.Equal(t, "https://httpbin.org/get", data.Url)
+}
+
+func TestResponse_XML(t *testing.T) {
+	type Data struct {
+		A string `xml:"a"`
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d, _ := xml.Marshal(Data{A: "111"})
+		_, _ = fmt.Fprint(w, string(d))
+	}))
+	defer ts.Close()
+	resp := Get(ts.URL).Do()
+	assert.NoError(t, resp.Err)
+	fmt.Println(resp.Text)
+	x, _ := resp.XML()
+	s, _ := xmlpath.MustCompile("/Data/a").String(x)
+	assert.Equal(t, "111", s)
+	var res Data
+	assert.Nil(t, resp.BindXML(&res))
+	assert.Equal(t, "111", res.A)
 }

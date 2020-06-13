@@ -25,7 +25,7 @@ func TestWithRetry(t *testing.T) {
 		return true
 	}))
 	err := Get(ts.URL).SetClient(c).Do().Error()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 3, i)
 }
 
@@ -35,12 +35,13 @@ func TestWithCache(t *testing.T) {
 		_, _ = fmt.Fprintln(w, i)
 		i += 1
 	}))
+	defer ts.Close()
 	c := NewClient()
 	c.Use(WithCache(cache.New(10*time.Second, 10*time.Second)))
 	a, err := Get(ts.URL).SetClient(c).Do().Txt()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	b, err := Get(ts.URL).SetClient(c).Do().Txt()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	fmt.Println(a, b)
 	assert.Equal(t, a, b)
 }
@@ -49,7 +50,7 @@ func TestWithRandomUA(t *testing.T) {
 	c := NewClient()
 	c.Use(WithRandomUA())
 	resp, err := Get("https://httpbin.org/get").SetClient(c).Do().Resp()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	t.Log(resp.Text)
 	j, _ := resp.JSON()
 	assert.NotEqual(t, "Go-http-client/2.0", j.Get("headers.User-Agent").String())
@@ -59,7 +60,7 @@ func TestWithRefererFiller(t *testing.T) {
 	c := NewClient()
 	c.Use(WithRefererFiller())
 	resp, err := Get("https://httpbin.org/get").SetClient(c).Do().Resp()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	t.Log(resp.Text)
 	j, _ := resp.JSON()
 	assert.True(t, j.Get("headers.Referer").Exists())
@@ -69,5 +70,5 @@ func TestWithDebug(t *testing.T) {
 	c := NewClient()
 	c.Use(WithDebug())
 	err := Get("https://httpbin.org/get").SetClient(c).Do().Error()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }

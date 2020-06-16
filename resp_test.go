@@ -43,13 +43,13 @@ func TestResponse_JSON(t *testing.T) {
 	assert.True(t, jsonResp.IsJSON())
 	t.Log(jsonResp.Text)
 	j, _ := jsonResp.JSON()
-	assert.Equal(t, "https://httpbin.org/get", j.Get("url").String())
+	assert.Equal(t, "http://httpbin.org/get", j.Get("url").String())
 
 	var data struct {
 		Url string `json:"url"`
 	}
 	assert.Nil(t, jsonResp.BindJSON(&data))
-	assert.Equal(t, "https://httpbin.org/get", data.Url)
+	assert.Equal(t, "http://httpbin.org/get", data.Url)
 }
 
 func TestResponse_XML(t *testing.T) {

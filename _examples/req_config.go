@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	resp := req.Post("https://httpbin.org/post?a=1").
+	resp := greq.Post("https://httpbin.org/post?a=1").
 		AddParam("b", "2").
 		AddHeaders(map[string]string{
 			"req": "golang",
@@ -21,11 +21,11 @@ func main() {
 		SetBasicAuth("goreq", "golang").
 		//SetProxy("http://127.0.0.1:1080/").
 		SetMultipartBody(
-			req.FormField{
+			greq.FormField{
 				Name:  "d",
 				Value: "4",
 			},
-			req.FormFile{
+			greq.FormFile{
 				FieldName:   "e",
 				FileName:    "e.txt",
 				ContentType: "",

@@ -10,7 +10,17 @@ An clean and simple Go HTTP request client library.
 go get -u github.com/zhshch2002/goreq
 ```
 
+> Warning
+>
+> goreq还处于v0的状态，缺少完整的文档和大量的测试。当前goreq已经可以稳定使用并用于我的一些个人项目。
+> goreq可以保证正常使用并处理issues反馈，但意外情况下不保证API和部分功能一定不变或向下兼容。
+>
+> Goreq is still in v0 state, lacking complete documentation and extensive testing. At present, goreq can be used steadily and used in some of my personal projects.
+> Goreq can ensure normal use and process issues feedback, but in unexpected cases, it does not guarantee that the API and some functions will be unchanged or backward compatible.
+
+
 ## Feature
+* Thread-safe | 线程安全
 * Auto Charset Decode | 自动解码
 * [Easy to set proxy for each req | 便捷代理设置](#Request)
 * [Chain config request | 链式配置请求](#Request)
@@ -20,7 +30,7 @@ go get -u github.com/zhshch2002/goreq
     * Cache | 缓存
     * Retry | 失败重试
     * Log | 日志
-    * Random UserAgent| 随机UA
+    * Random UserAgent | 随机UA
     * Referer | 填充Referer
 ### TODO
 * Download & Upload
@@ -37,7 +47,7 @@ import (
 )
 
 func main() {
-	h, err := req.Get("https://httpbin.org/").Do().HTML()
+	h, err := greq.Get("https://httpbin.org/").Do().HTML()
 	if err != nil {
 		panic(err)
 	}
@@ -49,15 +59,15 @@ func main() {
 
 ```go
 // Create a request
-req.Get("https://httpbin.org/")
-req.Post("https://httpbin.org/")
-req.Put("https://httpbin.org/")
+greq.Get("https://httpbin.org/")
+greq.Post("https://httpbin.org/")
+greq.Put("https://httpbin.org/")
 // ...
 ```
 
 #### Config chain
 ```go
-req.Get("https://httpbin.org/").
+greq.Get("https://httpbin.org/").
     AddHeader("Req-Client", "GoReq").
     AddParams(map[string]string{ // https://httpbin.org/?bbb=312 
         "bbb": "312",
@@ -91,7 +101,7 @@ import (
 )
 
 func main() {
-	resp := req.Post("https://httpbin.org/post?a=1").
+	resp := greq.Post("https://httpbin.org/post?a=1").
 		AddParam("b", "2").
 		AddHeaders(map[string]string{
 			"req": "golang",
@@ -104,18 +114,18 @@ func main() {
 		SetBasicAuth("goreq", "golang").
 		//SetProxy("http://127.0.0.1:1080/").
 		SetMultipartBody(
-			req.FormField{
+			greq.FormField{
 				Name:  "d",
 				Value: "4",
 			},
-			req.FormFile{
+			greq.FormFile{
 				FieldName:   "e",
 				FileName:    "e.txt",
 				ContentType: "",
 				File:        bytes.NewReader([]byte("55555")),
 			},
 		).
-		SetCallback(func(resp *req.Response) *req.Response {
+		SetCallback(func(resp *greq.Response) *greq.Response {
 			fmt.Println("here is the call back func")
 			return resp
 		}).
@@ -125,9 +135,9 @@ func main() {
 ```
 
 ### Response
-* type of(`req.Post("https://httpbin.org/post")`) is `*Request`
-* type of(`req.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
-* type of(`req.Post("https://httpbin.org/post").Do()`) is `*Response`
+* type of(`greq.Post("https://httpbin.org/post")`) is `*Request`
+* type of(`greq.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
+* type of(`greq.Post("https://httpbin.org/post").Do()`) is `*Response`
 
 After calling the request's `Do()`, it will return a `*Response` and execute Callback
 ```go
@@ -147,7 +157,7 @@ import (
 )
 
 func main() {
-	resp := req.Get("https://example.com/").Do()
+	resp := greq.Get("https://example.com/").Do()
 	if resp.Err != nil {
 		panic(resp.Err)
 	}
@@ -182,18 +192,18 @@ import (
 )
 
 func main() {
-	// you can config `req.DefaultClient.Use()` to set global middleware
-	c := req.NewClient() // create a new client
+	// you can config `greq.DefaultClient.Use()` to set global middleware
+	c := greq.NewClient() // create a new client
 	c.Use(req.WithRandomUA()) // Add a builtin middleware
-	c.Use(func(client *req.Client, handler req.Handler) req.Handler { // Add another middleware
-		return func(r *req.Request) *req.Response {
+	c.Use(func(client *greq.Client, handler greq.Handler) greq.Handler { // Add another middleware
+		return func(r *greq.Request) *greq.Response {
 			fmt.Println("this is a middleware")
 			r.Header.Set("req", "goreq")
 			return handler(r)
 		}
 	})
 
-	txt, err := req.Get("https://httpbin.org/get").SetClient(c).Do().Txt()
+	txt, err := greq.Get("https://httpbin.org/get").SetClient(c).Do().Txt()
 	fmt.Println(txt, err)
 }
 ```

@@ -1,4 +1,4 @@
-package req
+package greq
 
 import (
 	"encoding/xml"

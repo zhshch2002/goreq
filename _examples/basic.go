@@ -7,7 +7,7 @@ import (
 
 func main() {
 	// make a request
-	res := req.Do(req.Get("https://httpbin.org/get"))
+	res := greq.Do(greq.Get("https://httpbin.org/get"))
 	if res.Err != nil {
 		fmt.Println(res.Err)
 	} else {
@@ -16,8 +16,8 @@ func main() {
 
 	// set params
 	// AddHeader,AddHeaders,AddCookie work as the same way
-	if res, err := req.Do(
-		req.Get("https://httpbin.org/get?hi=myself").
+	if res, err := greq.Do(
+		greq.Get("https://httpbin.org/get?hi=myself").
 			AddParam("aaa", "111"). // set a single param
 			AddParams(map[string]string{
 				"bbb": "222",
@@ -46,8 +46,8 @@ func main() {
 	*/
 
 	// parse response
-	if res, err := req.Do(
-		req.Get("https://httpbin.org/get?hi=myself").
+	if res, err := greq.Do(
+		greq.Get("https://httpbin.org/get?hi=myself").
 			AddParam("aaa", "111"). // set a single param
 			AddParams(map[string]string{
 				"bbb": "222",
@@ -69,14 +69,14 @@ func main() {
 	}
 
 	// active middleware
-	c := req.NewClient()
-	c.Use(req.WithRandomUA())
+	c := greq.NewClient()
+	c.Use(greq.WithRandomUA())
 	// cache the duplicate request
 	// c.Use(req.WithCache(cache.New(1*time.Hour, 10*time.Minute)))
 	// use proxy or follow http_proxy env var
 	// c.Use(req.WithProxy())
-	if res, err := req.Do(
-		req.Get("https://httpbin.org/get"),
+	if res, err := greq.Do(
+		greq.Get("https://httpbin.org/get"),
 	).Resp(); err == nil {
 		fmt.Println(res.Text)
 	} else {

@@ -8,7 +8,7 @@ import (
 func main() {
 	//req.DefaultClient.Use(req.WithCache(cache.New(1*time.Hour, 10*time.Minute)))
 	//req.DefaultClient.Use(req.WithDebug())
-	res := greq.Do(greq.Post("https://httpbin.org/post?hello=world").
+	res := goreq.Do(goreq.Post("https://httpbin.org/post?hello=world").
 		SetFormBody(map[string]string{
 			"aaa": "123",
 		}).AddParams(map[string]string{

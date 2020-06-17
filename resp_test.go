@@ -1,4 +1,4 @@
-package greq
+package goreq
 
 import (
 	"encoding/xml"

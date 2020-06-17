@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	resp := greq.Get("https://example.com/").Do()
+	resp := goreq.Get("https://example.com/").Do()
 	if resp.Err != nil {
 		panic(resp.Err)
 	}

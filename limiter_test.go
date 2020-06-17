@@ -50,7 +50,7 @@ func TestLimiterRate(t *testing.T) {
 		a -= 1
 	}
 	wg.Wait()
-	assert.True(t, time.Since(start) >= 15*time.Second)
+	assert.True(t, time.Since(start) >= 10*time.Second)
 }
 
 func TestLimiterParallelism(t *testing.T) {

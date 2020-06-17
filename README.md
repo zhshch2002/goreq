@@ -32,6 +32,7 @@ go get -u github.com/zhshch2002/goreq
     * Log | 日志
     * Random UserAgent | 随机UA
     * Referer | 填充Referer
+    * Rate,delay and parallelism limiter | 设置速率、延时、并发限制
 ### TODO
 * Download & Upload
 * Format Print
@@ -214,3 +215,4 @@ func main() {
 * `WithProxy(p ...string)` set a list of proxy or it will follow `all_proxy` `https_proxy` and `http_proxy` env
 * `WithRefererFiller()`
 * `WithRandomUA()`
+* `WithLimiter(WhiteList bool, rules ...*LimitRule)` control rate,delay and parallelism

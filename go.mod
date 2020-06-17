@@ -6,6 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/gin-gonic/gin v1.6.3
+	github.com/gobwas/glob v0.2.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/stretchr/testify v1.6.1

@@ -281,6 +281,10 @@ func (s *Request) Do() *Response {
 	return s.callback(s.client.Do(s))
 }
 
+func (s *Request) String() string {
+	return s.URL.String()
+}
+
 //func (s *Request) Format(f fmt.State, c rune) {
 //	if s == nil {
 //		fmt.Print(nil)

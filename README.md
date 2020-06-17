@@ -211,6 +211,6 @@ func main() {
 * `WithDebug()`
 * `WithCache(ca *cache.Cache)` Cache of `*Response` by go-cache
 * `WithRetry(maxTimes int, isRespOk func(*Response)` set `nil` for `isRespOk` means no check func
-* `WithProxy(p ...string)` set a list of proxy of it will follow `all_proxy` `https_proxy` and  `http_proxy` env
+* `WithProxy(p ...string)` set a list of proxy or it will follow `all_proxy` `https_proxy` and  `http_proxy` env
 * `WithRefererFiller()`
 * `WithRandomUA()`

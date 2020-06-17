@@ -1,4 +1,4 @@
-# Req
+# Goreq
 [![goproxy.cn](https://goproxy.cn/stats/github.com/zhshch2002/goreq/badges/download-count.svg)](https://goproxy.cn)
 ![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg)
 [![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
@@ -47,7 +47,7 @@ import (
 )
 
 func main() {
-	h, err := greq.Get("https://httpbin.org/").Do().HTML()
+	h, err := goreq.Get("https://httpbin.org/").Do().HTML()
 	if err != nil {
 		panic(err)
 	}
@@ -59,15 +59,15 @@ func main() {
 
 ```go
 // Create a request
-greq.Get("https://httpbin.org/")
-greq.Post("https://httpbin.org/")
-greq.Put("https://httpbin.org/")
+goreq.Get("https://httpbin.org/")
+goreq.Post("https://httpbin.org/")
+goreq.Put("https://httpbin.org/")
 // ...
 ```
 
 #### Config chain
 ```go
-greq.Get("https://httpbin.org/").
+goreq.Get("https://httpbin.org/").
     AddHeader("Req-Client", "GoReq").
     AddParams(map[string]string{ // https://httpbin.org/?bbb=312 
         "bbb": "312",
@@ -101,7 +101,7 @@ import (
 )
 
 func main() {
-	resp := greq.Post("https://httpbin.org/post?a=1").
+	resp := goreq.Post("https://httpbin.org/post?a=1").
 		AddParam("b", "2").
 		AddHeaders(map[string]string{
 			"req": "golang",
@@ -114,18 +114,18 @@ func main() {
 		SetBasicAuth("goreq", "golang").
 		//SetProxy("http://127.0.0.1:1080/").
 		SetMultipartBody(
-			greq.FormField{
+			goreq.FormField{
 				Name:  "d",
 				Value: "4",
 			},
-			greq.FormFile{
+			goreq.FormFile{
 				FieldName:   "e",
 				FileName:    "e.txt",
 				ContentType: "",
 				File:        bytes.NewReader([]byte("55555")),
 			},
 		).
-		SetCallback(func(resp *greq.Response) *greq.Response {
+		SetCallback(func(resp *goreq.Response) *goreq.Response {
 			fmt.Println("here is the call back func")
 			return resp
 		}).
@@ -135,9 +135,9 @@ func main() {
 ```
 
 ### Response
-* type of(`greq.Post("https://httpbin.org/post")`) is `*Request`
-* type of(`greq.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
-* type of(`greq.Post("https://httpbin.org/post").Do()`) is `*Response`
+* type of(`goreq.Post("https://httpbin.org/post")`) is `*Request`
+* type of(`goreq.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
+* type of(`goreq.Post("https://httpbin.org/post").Do()`) is `*Response`
 
 After calling the request's `Do()`, it will return a `*Response` and execute Callback
 ```go
@@ -157,7 +157,7 @@ import (
 )
 
 func main() {
-	resp := greq.Get("https://example.com/").Do()
+	resp := goreq.Get("https://example.com/").Do()
 	if resp.Err != nil {
 		panic(resp.Err)
 	}
@@ -192,18 +192,18 @@ import (
 )
 
 func main() {
-	// you can config `greq.DefaultClient.Use()` to set global middleware
-	c := greq.NewClient() // create a new client
+	// you can config `goreq.DefaultClient.Use()` to set global middleware
+	c := goreq.NewClient() // create a new client
 	c.Use(req.WithRandomUA()) // Add a builtin middleware
-	c.Use(func(client *greq.Client, handler greq.Handler) greq.Handler { // Add another middleware
-		return func(r *greq.Request) *greq.Response {
+	c.Use(func(client *goreq.Client, handler goreq.Handler) goreq.Handler { // Add another middleware
+		return func(r *goreq.Request) *goreq.Response {
 			fmt.Println("this is a middleware")
 			r.Header.Set("req", "goreq")
 			return handler(r)
 		}
 	})
 
-	txt, err := greq.Get("https://httpbin.org/get").SetClient(c).Do().Txt()
+	txt, err := goreq.Get("https://httpbin.org/get").SetClient(c).Do().Txt()
 	fmt.Println(txt, err)
 }
 ```

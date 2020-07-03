@@ -11,8 +11,8 @@ import (
 func WithDebug() Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			res := h(req)
-			fmt.Printf("%+v\n%+v\n", res.Req, res)
+			res := h(req.SetDebug(true))
+			//fmt.Printf("%+v\n%+v\n", res.Req, res)
 			return res
 		}
 	}
@@ -46,7 +46,7 @@ func WithRetry(maxTimes int, isRespOk func(*Response) bool) Middleware {
 					ok = isRespOk(res)
 				}
 				if (res.Err != nil || !ok) && res.Req.Err == nil {
-					if Debug {
+					if req.Debug {
 						fmt.Println("[Retry", i, "times] got error on request", req.URL, res.Err)
 					}
 					continue

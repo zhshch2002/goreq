@@ -2,6 +2,7 @@ package goreq
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -19,13 +20,19 @@ func Do(req *Request) *Response {
 type Handler func(*Request) *Response
 type Middleware func(*Client, Handler) Handler
 
+type ReqError struct {
+	error
+}
+
+var ReqRejectedErr = errors.New("request is rejected")
+
 type Client struct {
 	cli        *http.Client
 	middleware []Middleware
 	handler    Handler
 }
 
-func NewClient() *Client {
+func NewClient(m ...Middleware) *Client {
 	j, _ := cookiejar.New(nil)
 	c := &Client{
 		cli: &http.Client{
@@ -42,20 +49,36 @@ func NewClient() *Client {
 		middleware: []Middleware{},
 	}
 	c.handler = basicHttpDo(c, nil)
+	c.Use(m...)
 	return c
 }
 
-func (s *Client) Use(m ...Middleware) {
+func (s *Client) Use(m ...Middleware) *Client {
 	s.middleware = append(s.middleware, m...)
 	//s.handler = basicHttpDo(s, nil)
-	for i := len(s.middleware) - 1; i >= 0; i-- {
+	for i := 0; i < len(s.middleware); i++ {
 		s.handler = s.middleware[i](s, s.handler)
 	}
+	return s
 }
 
 func (s *Client) Do(req *Request) *Response {
+	if req.Err != nil {
+		return &Response{
+			Req: req,
+			Err: ReqError{req.Err},
+		}
+	}
 	res := s.handler(req)
-	res.Err = res.DecodeAndParse()
+	if res == nil {
+		return &Response{
+			Req: req,
+			Err: ReqRejectedErr,
+		}
+	}
+	if res.Err == nil {
+		res.Err = res.DecodeAndParse()
+	}
 	return res
 }
 
@@ -66,9 +89,6 @@ func basicHttpDo(c *Client, next Handler) Handler {
 			Text: "",
 			Body: []byte{},
 			Err:  req.Err,
-		}
-		if req.Err != nil {
-			return resp
 		}
 
 		if req.ProxyURL != "" {

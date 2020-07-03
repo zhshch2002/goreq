@@ -21,6 +21,7 @@ func NewRequest(method, urladdr string) *Request {
 		ProxyURL:   "",
 		client:     DefaultClient,
 		Err:        err,
+		Debug:      false,
 		callback: func(resp *Response) *Response {
 			return resp
 		},
@@ -65,10 +66,17 @@ type Request struct {
 
 	Writer io.Writer
 
+	Debug bool
+
 	callback func(resp *Response) *Response
 	client   *Client
 
 	Err error
+}
+
+func (s *Request) SetDebug(d bool) *Request {
+	s.Debug = d
+	return s
 }
 
 func (s *Request) SetProxy(urladdr string) *Request {
@@ -222,7 +230,7 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 			case FormField:
 				s.Err = wr.WriteField(v.(FormField).Name, v.(FormField).Value)
 				if s.Err != nil {
-					if Debug {
+					if s.Debug {
 						fmt.Println(s.Err)
 					}
 					return s
@@ -240,14 +248,14 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 				}
 				w, s.Err = wr.CreatePart(h)
 				if s.Err != nil {
-					if Debug {
+					if s.Debug {
 						fmt.Println(s.Err)
 					}
 					return s
 				}
 				_, s.Err = io.Copy(w, v.(FormFile).File)
 				if s.Err != nil {
-					if Debug {
+					if s.Debug {
 						fmt.Println(s.Err)
 					}
 					return s
@@ -256,7 +264,7 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 		}
 		s.Err = wr.Close()
 		if s.Err != nil {
-			if Debug {
+			if s.Debug {
 				fmt.Println(s.Err)
 			}
 			return s

@@ -12,7 +12,6 @@ import (
 
 func TestWithRetry(t *testing.T) {
 	i := 0
-	Debug = true
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintln(w, i)
 		i += 1
@@ -24,7 +23,7 @@ func TestWithRetry(t *testing.T) {
 		}
 		return true
 	}))
-	err := Get(ts.URL).SetClient(c).Do().Error()
+	err := Get(ts.URL).SetDebug(true).SetClient(c).Do().Error()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, i)
 }

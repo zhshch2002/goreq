@@ -19,25 +19,13 @@ const (
 	Disallow
 )
 
-type LimitRule struct {
-	Regexp, Glob       string
-	Allow              LimitRuleAllow
-	Parallelism        int64
-	workingParallelism int64
-	Rate               int64
-	rateLeft           int64
-	Delay              time.Duration
-	RandomDelay        time.Duration
-	MaxReq             int64
-	reqLeft            int64
-	MaxDepth           int64
-	lastReqTime        time.Time
-	compiledRegexp     *regexp.Regexp
-	compiledGlob       glob.Glob
-	delayLock          sync.Mutex
+type LimiterMatcher struct {
+	Regexp, Glob   string
+	compiledRegexp *regexp.Regexp
+	compiledGlob   glob.Glob
 }
 
-func (s *LimitRule) Match(u *url.URL) bool {
+func (s *LimiterMatcher) Match(u *url.URL) bool {
 	match := false
 	if s.compiledGlob != nil {
 		match = s.compiledGlob.Match(strings.ToLower(u.Host))
@@ -47,83 +35,247 @@ func (s *LimitRule) Match(u *url.URL) bool {
 	return match
 }
 
-func WithLimiter(WhiteList bool, rules ...*LimitRule) Middleware {
-	for k, r := range rules {
-		if r.Allow == NotSet {
-			rules[k].Allow = Allow
-		}
-		rules[k].rateLeft = r.Rate
-		rules[k].reqLeft = r.MaxReq
-		rules[k].delayLock = sync.Mutex{}
-		if rules[k].Glob != "" {
-			rules[k].compiledGlob = glob.MustCompile(rules[k].Glob)
-		} else {
-			rules[k].compiledRegexp = regexp.MustCompile(rules[k].Regexp)
+func (s *LimiterMatcher) Compile() {
+	if s.Glob != "" {
+		s.compiledGlob = glob.MustCompile(s.Glob)
+	} else if s.Regexp != "" {
+		s.compiledRegexp = regexp.MustCompile(s.Regexp)
+	}
+}
+
+type FilterLimiterOpinion struct {
+	LimiterMatcher
+	Allow bool
+}
+
+func WithFilterLimiter(noneMatchAllow bool, opts ...*FilterLimiterOpinion) Middleware {
+	for i := range opts {
+		opts[i].Compile()
+	}
+	return func(c *Client, h Handler) Handler {
+		return func(req *Request) *Response {
+			for i := range opts {
+				if opts[i].Match(req.URL) {
+					if opts[i].Allow {
+						return h(req)
+					} else {
+						return nil
+					}
+				}
+			}
+			if noneMatchAllow {
+				return h(req)
+			} else {
+				return nil
+			}
 		}
 	}
-	rateCtl := true
-	go func() {
-		for rateCtl {
-			time.Sleep(1 * time.Second)
-			for k, _ := range rules {
-				atomic.StoreInt64(&rules[k].rateLeft, rules[k].Rate)
+}
+
+type delayLimiterVal struct {
+	Delay       time.Duration
+	RandomDelay time.Duration
+	lastReqTime time.Time
+	lock        sync.Mutex
+}
+
+type DelayLimiterOpinion struct {
+	LimiterMatcher
+	Delay       time.Duration
+	RandomDelay time.Duration
+	lastReqTime time.Time
+	lock        sync.Mutex
+}
+
+func WithDelayLimiter(eachSite bool, opts ...*DelayLimiterOpinion) Middleware {
+	for i := range opts {
+		opts[i].Compile()
+		opts[i].lock = sync.Mutex{}
+	}
+	sites := sync.Map{}
+	return func(c *Client, h Handler) Handler {
+		return func(req *Request) *Response {
+			if !eachSite {
+				for i := range opts {
+					if opts[i].Match(req.URL) {
+						opts[i].lock.Lock()
+						since := time.Since(opts[i].lastReqTime)
+						if since < opts[i].Delay {
+							time.Sleep(opts[i].Delay - since)
+						}
+						if opts[i].RandomDelay > 0 {
+							ra := rand.New(rand.NewSource(time.Now().Unix()))
+							time.Sleep(time.Duration(ra.Int63n(int64(opts[i].RandomDelay))))
+						}
+						res := h(req)
+						opts[i].lastReqTime = time.Now()
+						opts[i].lock.Unlock()
+						return res
+					}
+				}
 			}
+			for i := range opts {
+				if opts[i].Match(req.URL) {
+					v, _ := sites.LoadOrStore(req.URL.Host, &delayLimiterVal{
+						Delay:       opts[i].Delay,
+						RandomDelay: opts[i].Delay,
+						lastReqTime: time.Time{},
+						lock:        sync.Mutex{},
+					})
+					val := v.(*delayLimiterVal)
+					val.lock.Lock()
+					since := time.Since(val.lastReqTime)
+					if since < val.Delay {
+						time.Sleep(val.Delay - since)
+					}
+					if val.RandomDelay > 0 {
+						ra := rand.New(rand.NewSource(time.Now().Unix()))
+						time.Sleep(time.Duration(ra.Int63n(int64(val.RandomDelay))))
+					}
+					res := h(req)
+					val.lastReqTime = time.Now()
+					val.lock.Unlock()
+					return res
+				}
+			}
+			return h(req)
+		}
+	}
+}
+
+type rateLimiterVal struct {
+	Rate     int64
+	rateLeft int64
+}
+
+type RateLimiterOpinion struct {
+	LimiterMatcher
+	Rate     int64
+	rateLeft int64
+}
+
+func WithRateLimiter(eachSite bool, opts ...*RateLimiterOpinion) Middleware {
+	for i := range opts {
+		opts[i].Compile()
+	}
+	sites := sync.Map{}
+	go func() {
+		for {
+			if eachSite {
+				sites.Range(func(k, v interface{}) bool {
+					data := v.(*rateLimiterVal)
+					data.rateLeft = data.Rate
+					sites.Store(k, data)
+					return true
+				})
+			} else {
+				for i := range opts {
+					opts[i].rateLeft = opts[i].Rate
+				}
+			}
+			time.Sleep(1 * time.Second)
 		}
 	}()
 	return func(c *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			for k, r := range rules {
-				if r.Match(req.URL) {
-					if r.Allow == Disallow {
-						return nil
-					}
-					if r.Delay > 0 || r.RandomDelay > 0 {
-						rules[k].delayLock.Lock()
-						since := time.Since(r.lastReqTime)
-						if since < r.Delay {
-							time.Sleep(r.Delay - since)
-						}
-						if r.RandomDelay > 0 {
-							ra := rand.New(rand.NewSource(time.Now().Unix()))
-							time.Sleep(time.Duration(ra.Int63n(int64(r.RandomDelay))))
-						}
-						rules[k].lastReqTime = time.Now()
-						rules[k].delayLock.Unlock()
-						return h(req)
-					} else if r.Rate > 0 {
+			if !eachSite {
+				for i := range opts {
+					if opts[i].Match(req.URL) {
 						wait := true
 						for wait {
-							if atomic.LoadInt64(&rules[k].rateLeft) > 0 {
-								atomic.AddInt64(&rules[k].rateLeft, -1)
+							if atomic.LoadInt64(&opts[i].rateLeft) > 0 {
+								atomic.AddInt64(&opts[i].rateLeft, -1)
 								wait = false
 							} else {
-								time.Sleep(500 * time.Microsecond)
+								time.Sleep(100 * time.Microsecond)
 							}
 						}
-						return h(req)
-					} else if r.Parallelism > 0 {
-						wait := true
-						for wait {
-							if atomic.LoadInt64(&rules[k].workingParallelism) < r.Parallelism {
-								atomic.AddInt64(&rules[k].workingParallelism, 1)
-								wait = false
-							} else {
-								time.Sleep(500 * time.Microsecond)
-							}
-						}
-						resp := h(req)
-						atomic.AddInt64(&rules[k].workingParallelism, -1)
-						return resp
-					} else {
 						return h(req)
 					}
 				}
 			}
-			if WhiteList {
-				return nil
-			} else {
-				return h(req)
+			for i := range opts {
+				if opts[i].Match(req.URL) {
+					v, _ := sites.LoadOrStore(req.URL.Host, &rateLimiterVal{
+						Rate:     opts[i].Rate,
+						rateLeft: opts[i].rateLeft,
+					})
+					val := v.(*rateLimiterVal)
+					wait := true
+					for wait {
+						if atomic.LoadInt64(&val.rateLeft) > 0 {
+							atomic.AddInt64(&val.rateLeft, -1)
+							wait = false
+						} else {
+							time.Sleep(100 * time.Microsecond)
+						}
+					}
+					return h(req)
+				}
 			}
+			return h(req)
+		}
+	}
+}
+
+type parallelismLimiterVal struct {
+	Parallelism        int64
+	workingParallelism int64
+}
+
+type ParallelismLimiterOpinion struct {
+	LimiterMatcher
+	Parallelism        int64
+	workingParallelism int64
+}
+
+func WithParallelismLimiter(eachSite bool, opts ...*ParallelismLimiterOpinion) Middleware {
+	for i := range opts {
+		opts[i].Compile()
+	}
+	sites := sync.Map{}
+	return func(c *Client, h Handler) Handler {
+		return func(req *Request) *Response {
+			if !eachSite {
+				for i := range opts {
+					if opts[i].Match(req.URL) {
+						wait := true
+						for wait {
+							if atomic.LoadInt64(&opts[i].workingParallelism) < opts[i].Parallelism {
+								atomic.AddInt64(&opts[i].workingParallelism, 1)
+								wait = false
+							} else {
+								time.Sleep(100 * time.Microsecond)
+							}
+						}
+						resp := h(req)
+						atomic.AddInt64(&opts[i].workingParallelism, -1)
+						return resp
+					}
+				}
+			}
+			for i := range opts {
+				if opts[i].Match(req.URL) {
+					v, _ := sites.LoadOrStore(req.URL.Host, &parallelismLimiterVal{
+						Parallelism:        opts[i].Parallelism,
+						workingParallelism: opts[i].workingParallelism,
+					})
+					val := v.(*parallelismLimiterVal)
+					wait := true
+					for wait {
+						if atomic.LoadInt64(&val.workingParallelism) < val.Parallelism {
+							atomic.AddInt64(&val.workingParallelism, 1)
+							wait = false
+						} else {
+							time.Sleep(100 * time.Microsecond)
+						}
+					}
+					resp := h(req)
+					atomic.AddInt64(&val.workingParallelism, -1)
+					return resp
+				}
+			}
+			return h(req)
 		}
 	}
 }

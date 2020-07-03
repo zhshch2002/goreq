@@ -12,10 +12,6 @@ import (
 	"testing"
 )
 
-func init() {
-	Debug = true
-}
-
 func TestMethods(t *testing.T) {
 	cb := func(resp *Response) *Response {
 		fmt.Println(resp.Text)

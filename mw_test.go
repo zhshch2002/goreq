@@ -16,6 +16,7 @@ func TestWithRetry(t *testing.T) {
 		_, _ = fmt.Fprintln(w, i)
 		i += 1
 	}))
+	defer ts.Close()
 	c := NewClient()
 	c.Use(WithRetry(10, func(resp *Response) bool {
 		if i < 3 {

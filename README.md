@@ -3,21 +3,13 @@
 ![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg)
 [![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
 
-An clean and simple Go HTTP request client library.
-一个优雅并简洁的Go HTTP请求库。
+易用于网页、API 环境下的 Golang HTTP Client 封装库。
+
+> 让`net/http`为人类服务。
 
 ```shell script
 go get -u github.com/zhshch2002/goreq
 ```
-
-> Warning
->
-> goreq还处于v0的状态，缺少完整的文档和大量的测试。当前goreq已经可以稳定使用并用于我的一些个人项目。
-> goreq可以保证正常使用并处理issues反馈，但意外情况下不保证API和部分功能一定不变或向下兼容。
->
-> Goreq is still in v0 state, lacking complete documentation and extensive testing. At present, goreq can be used steadily and used in some of my personal projects.
-> Goreq can ensure normal use and process issues feedback, but in unexpected cases, it does not guarantee that the API and some functions will be unchanged or backward compatible.
-
 
 ## Feature
 * Thread-safe | 线程安全
@@ -33,9 +25,6 @@ go get -u github.com/zhshch2002/goreq
     * Random UserAgent | 随机UA
     * Referer | 填充Referer
     * Rate,delay and parallelism limiter | 设置速率、延时、并发限制
-### TODO
-* Download & Upload
-* Format Print
 
 ## Usage
 
@@ -215,4 +204,48 @@ func main() {
 * `WithProxy(p ...string)` set a list of proxy or it will follow `all_proxy` `https_proxy` and `http_proxy` env
 * `WithRefererFiller()`
 * `WithRandomUA()`
-* `WithLimiter(WhiteList bool, rules ...*LimitRule)` control rate,delay and parallelism
+* Limiter | control Rate Delay and Parallelism
+  * `WithFilterLimiter(noneMatchAllow bool, opts ...*FilterLimiterOpinion)` 
+  * `WithDelayLimiter(eachSite bool, opts ...*DelayLimiterOpinion)` 
+  * `WithRateLimiter(eachSite bool, opts ...*RateLimiterOpinion)` 
+  * `WithParallelismLimiter(eachSite bool, opts ...*ParallelismLimiterOpinion)` 
+
+### 失败重试 | WithRetry
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/zhshch2002/goreq"
+)
+
+func main() {
+	i := 0
+	// 配置失败重试中间件，第二个参数函数用来检查是否为可接受的响应，传入 nil 使用默认函数。
+	c := goreq.NewClient(goreq.WithRetry(10, func(resp *goreq.Response) bool {
+		if i < 3 { // 为了演示模拟几次失败
+			i += 1
+			return false
+		}
+		return true
+	}))
+	fmt.Println(goreq.Get("https://httpbin.org/get").SetDebug(true).SetClient(c).Do().Text)
+}
+```
+
+Output:
+```
+[Retry 1 times] got error on request https://httpbin.org/get <nil>
+[Retry 2 times] got error on request https://httpbin.org/get <nil>
+[Retry 3 times] got error on request https://httpbin.org/get <nil>
+{
+  "args": {},
+  "headers": {
+    "Accept-Encoding": "gzip",
+    "Host": "httpbin.org",
+    "User-Agent": "Go-http-client/2.0",
+    "X-Amzn-Trace-Id": "Root=1-5efe9c40-bbf2d5a095e0f6d0c3aaf4c0"
+  },
+  "url": "https://httpbin.org/get"
+}
+```

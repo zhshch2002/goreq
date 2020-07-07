@@ -12,7 +12,6 @@ func WithDebug() Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
 			res := h(req.SetDebug(true))
-			//fmt.Printf("%+v\n%+v\n", res.Req, res)
 			return res
 		}
 	}

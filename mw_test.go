@@ -38,12 +38,12 @@ func TestWithCache(t *testing.T) {
 	defer ts.Close()
 	c := NewClient()
 	c.Use(WithCache(cache.New(10*time.Second, 10*time.Second)))
-	a, err := Get(ts.URL).SetClient(c).Do().Txt()
+	a, err := Get(ts.URL).SetClient(c).Do().Resp()
 	assert.NoError(t, err)
-	b, err := Get(ts.URL).SetClient(c).Do().Txt()
+	b, err := Get(ts.URL).SetClient(c).Do().Resp()
 	assert.NoError(t, err)
-	fmt.Println(a, b)
-	assert.Equal(t, a, b)
+	fmt.Println(a.Text, b.Text)
+	assert.Equal(t, a.Text, b.Text)
 }
 
 func TestWithRandomUA(t *testing.T) {

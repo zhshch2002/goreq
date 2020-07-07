@@ -21,12 +21,13 @@ func WithDebug() Middleware {
 func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			if resp, ok := ca.Get(req.URL.String()); ok {
-				return resp.(*Response)
+			if data, ok := ca.Get(req.URL.String()); ok {
+				resp := data.(Response)
+				return &resp
 			}
 			res := h(req)
 			if res.Err == nil {
-				ca.Set(req.URL.String(), res, cache.DefaultExpiration)
+				ca.Set(req.URL.String(), *res, cache.DefaultExpiration)
 			}
 			return res
 		}

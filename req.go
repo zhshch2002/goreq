@@ -2,6 +2,7 @@ package goreq
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"net/textproto"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func NewRequest(method, urladdr string) *Request {
@@ -76,6 +78,12 @@ type Request struct {
 
 func (s *Request) SetDebug(d bool) *Request {
 	s.Debug = d
+	return s
+}
+
+func (s *Request) SetTimeout(t time.Duration) *Request {
+	ctx, _ := context.WithTimeout(s.Context(), t)
+	s.Request = s.WithContext(ctx)
 	return s
 }
 

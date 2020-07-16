@@ -2,6 +2,8 @@ package goreq
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -10,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestMethods(t *testing.T) {
@@ -138,6 +141,7 @@ func TestRequest_Do(t *testing.T) {
 	assert.Equal(t, "golang", j.Get("headers.Req").String())
 	assert.Equal(t, "goreq", j.Get("headers.User-Agent").String())
 }
+
 func setupProxy(t *testing.T) *gin.Engine {
 	r := gin.New()
 	r.GET("/:a", func(c *gin.Context) {
@@ -157,4 +161,16 @@ func TestProxy(t *testing.T) {
 	txt, err := Get(ts.URL + "/login").SetRawBody([]byte(proxyTs.URL)).SetProxy(proxyTs.URL).Do().Txt()
 	assert.NoError(t, err)
 	assert.Equal(t, txt, proxyTs.URL)
+}
+
+func TestRequest_SetTimeout(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(5 * time.Second)
+		_, _ = fmt.Fprint(w, "hello")
+	}))
+	defer ts.Close()
+	err := Get(ts.URL).SetTimeout(10 * time.Second).Do().Error()
+	assert.NoError(t, err)
+	err = Get(ts.URL).SetTimeout(1 * time.Second).Do().Error()
+	assert.True(t, errors.Is(err, context.DeadlineExceeded))
 }

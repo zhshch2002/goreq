@@ -45,6 +45,15 @@ func NewClient(m ...Middleware) *Client {
 					return nil, nil
 				},
 			},
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if fn, ok := req.Context().Value("CheckRedirect").(func(*http.Request, []*http.Request) error); ok && fn != nil {
+					return fn(req, via)
+				}
+				if len(via) >= 10 {
+					return errors.New("stopped after 10 redirects")
+				}
+				return nil
+			},
 		},
 		middleware: []Middleware{},
 	}

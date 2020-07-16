@@ -174,3 +174,19 @@ func TestRequest_SetTimeout(t *testing.T) {
 	err = Get(ts.URL).SetTimeout(1 * time.Second).Do().Error()
 	assert.True(t, errors.Is(err, context.DeadlineExceeded))
 }
+
+func TestRequest_SetCheckRedirect(t *testing.T) {
+	i := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		i += 1
+		http.Redirect(w, r, "/", 301)
+		_, _ = fmt.Fprint(w, "hello")
+	}))
+	defer ts.Close()
+	err := Get(ts.URL).DisableRedirect().Do().Error()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, i)
+	err = Get(ts.URL).Do().Error()
+	assert.Error(t, err)
+	assert.Equal(t, 11, i)
+}

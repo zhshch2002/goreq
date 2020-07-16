@@ -14,54 +14,33 @@ go get -u github.com/zhshch2002/goreq
 ## Feature
 * Thread-safe | 线程安全
 * Auto Charset Decode | 自动解码
-* [Easy to set proxy for each req | 便捷代理设置](#Request)
-* [Chain config request | 链式配置请求](#Request)
-* [Multipart post support](#Request)
-* [Parse HTML,JSON,XML | HTML、JSON、XML解析](#Response)
-* [Middleware | 中间件](#Middleware)
+* Easy to set proxy for each req | 便捷代理设置
+* Chain config request | 链式配置请求
+* Multipart post support
+* Parse HTML,JSON,XML | HTML、JSON、XML 解析
+* Middleware | 中间件
     * Cache | 缓存
     * Retry | 失败重试
     * Log | 日志
-    * Random UserAgent | 随机UA
-    * Referer | 填充Referer
-    * Rate,delay and parallelism limiter | 设置速率、延时、并发限制
+    * Random UserAgent | 随机 UA
+    * Referer | 填充 Referer
+    * Rate Delay and Parallelism limiter | 设置速率、延时、并发限制
 
-## Usage
+**Goreq 是线程安全的**，意味着您无论在多线程还是单线程下开发，都无需改动代码。
 
+**Goreq 会自动处理网页编码**，对于下载下来的网页，Goreq 会根据 HTTP 报头、内容推断编码并加以解码。而且您任可以访问原始的未解码内容。
+
+## Request
+Goreq 是设计为一般情况下访问网页和 API 而设计的“便携”工具。
 ```go
-package main
+// `req`是一个请求`*goreq.Request`，是一个包装过的`net/http`下的 `*http.Request`
+req := goreq.Get("https://httpbin.org/")
 
-import (
-	"fmt"
-	"github.com/zhshch2002/goreq"
-)
-
-func main() {
-	h, err := goreq.Get("https://httpbin.org/").Do().HTML()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(h.Find("title").Text())
+// 请求可以被链式配置，如果配置过程中出现错误，`req.Err`将不再为`nil`
+req = goreq.Get("https://httpbin.org/get").AddParam("A","a")
+if req.Err!=nil {
+    panic(req.Err)
 }
-```
-
-### Request
-
-```go
-// Create a request
-goreq.Get("https://httpbin.org/")
-goreq.Post("https://httpbin.org/")
-goreq.Put("https://httpbin.org/")
-// ...
-```
-
-#### Config chain
-```go
-goreq.Get("https://httpbin.org/").
-    AddHeader("Req-Client", "GoReq").
-    AddParams(map[string]string{ // https://httpbin.org/?bbb=312 
-        "bbb": "312",
-    })
 ```
 
 * `AddParam(k, v string)`
@@ -72,6 +51,9 @@ goreq.Get("https://httpbin.org/").
 * `SetUA(ua string)`
 * `SetBasicAuth(username, password string)`
 * `SetProxy(urladdr string)`
+* `SetTimeout(t time.Duration)`
+* `DisableRedirect()`
+* `SetCheckRedirect(fn func(req *http.Request, via []*http.Request) error)`
 * Set request body data
     * `SetBody(b io.Reader)` basic setting
     * `SetRawBody(b []byte)`
@@ -80,99 +62,35 @@ goreq.Get("https://httpbin.org/").
     * `SetMultipartBody(data ...interface{})` Set a slice of `FormField` and `FormFile` struct as body data
 * `Callback(fn func(resp *Response)` Set a callback func run after req `Do()`
 
-```go
-package main
-
-import (
-	"bytes"
-	"fmt"
-	"github.com/zhshch2002/goreq"
-	"net/http"
-)
-
-func main() {
-	resp := goreq.Post("https://httpbin.org/post?a=1").
-		AddParam("b", "2").
-		AddHeaders(map[string]string{
-			"req": "golang",
-		}).
-		AddCookie(&http.Cookie{
-			Name:  "c",
-			Value: "3",
-		}).
-		SetUA("goreq").
-		SetBasicAuth("goreq", "golang").
-		//SetProxy("http://127.0.0.1:1080/").
-		SetMultipartBody(
-			goreq.FormField{
-				Name:  "d",
-				Value: "4",
-			},
-			goreq.FormFile{
-				FieldName:   "e",
-				FileName:    "e.txt",
-				ContentType: "",
-				File:        bytes.NewReader([]byte("55555")),
-			},
-		).
-		SetCallback(func(resp *goreq.Response) *goreq.Response {
-			fmt.Println("here is the call back func")
-			return resp
-		}).
-		Do()
-	fmt.Println(resp.Text)
-}
-```
-
-### Response
-* type of(`goreq.Post("https://httpbin.org/post")`) is `*Request`
-* type of(`goreq.Post("https://httpbin.org/post").SetUA("goreq")`) is `*Request`
-* type of(`goreq.Post("https://httpbin.org/post").Do()`) is `*Response`
-
-After calling the request's `Do()`, it will return a `*Response` and execute Callback
-```go
-func (s *Request) Do() *Response {
-	return s.callback(s.client.Do(s))
-}
-```
-
-The `*Response` contains the request and the decoded body.
+## Response
+一个“请求”需要被“执行”来获得响应。
 
 ```go
-package main
+resp:=goreq.Get("https://httpbin.org/get").AddParam("A","a").Do()
 
-import (
-	"fmt"
-	"github.com/zhshch2002/goreq"
-)
+// 等效于执行了
+resp:=goreq.DefaultClient.Do(goreq.Get("https://httpbin.org/get").AddParam("A","a"))
+```
+执行“请求”的是`*goreq.Client`，可以对其配置来添加中间件以实现扩展功能。
 
-func main() {
-	resp := goreq.Get("https://example.com/").Do()
-	if resp.Err != nil {
-		panic(resp.Err)
-	}
-	fmt.Println(resp.Text) // Get the decode text,same as `text,err:=resp.Txt()`
-
-	j, err := resp.JSON() // Parse as json with gjson
-	fmt.Println(resp.IsJSON(), j, err)
-
-	h, err := resp.HTML() // Parse as html with goquery
-	fmt.Println(resp.IsHTML(), h, err)
-
-	x, err := resp.XML() // Parse as xml with xmlpath
-	fmt.Println(x, err)
-
-	var data struct {
-		Url string `json:"url" xml:"url"`
-	}
-	err = resp.BindJSON(&data) // Parse as json
-	fmt.Println(data, err)
-	err = resp.BindXML(&data) // Parse as xml
-	fmt.Println(data, err)
-}
+```go
+c:=goreq.NewClient()
+c.Use(goreq.WithRandomUA()) // 添加一个自动随机浏览器 UA 的内置中间件
+resp:=goreq.Get("https://httpbin.org/get").AddParam("A","a").SetClient(c).Do()
+fmt.Println(resp.Txt())
 ```
 
-### Middleware
+`*goreq.Response`可以通过下述函数来获取响应数据。
+* `Resp() (*Response, error)` 获取响应本身以及网络请求错误。
+* `Txt() (string, error)` 自动处理完编码并解析为文本后的内容以及网络请求错误。
+* `HTML() (*goquery.Document, error)`
+* `XML() (*xmlpath.Node, error)`
+* `BindXML(i interface{}) error`
+* `JSON() (gjson.Result, error)`
+* `BindJSON(i interface{}) error`
+* `Error() error` 网络请求错误。（正常情况下为`nil`）
+
+## Middleware
 ```go
 package main
 
@@ -197,7 +115,7 @@ func main() {
 	fmt.Println(txt, err)
 }
 ```
-#### Builtin middleware
+### Builtin middleware
 * `WithDebug()`
 * `WithCache(ca *cache.Cache)` Cache of `*Response` by go-cache
 * `WithRetry(maxTimes int, isRespOk func(*Response)` set `nil` for `isRespOk` means no check func

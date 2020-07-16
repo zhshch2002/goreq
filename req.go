@@ -92,6 +92,18 @@ func (s *Request) SetProxy(urladdr string) *Request {
 	return s
 }
 
+func (s *Request) DisableRedirect() *Request {
+	s.SetCheckRedirect(func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	})
+	return s
+}
+
+func (s *Request) SetCheckRedirect(fn func(req *http.Request, via []*http.Request) error) *Request {
+	s.Request = s.WithContext(context.WithValue(s.Context(), "CheckRedirect", fn))
+	return s
+}
+
 // AddCookie adds a cookie to the request.
 func (s *Request) AddCookie(c *http.Cookie) *Request {
 	if s.Err == nil {

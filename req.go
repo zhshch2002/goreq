@@ -112,6 +112,16 @@ func (s *Request) AddCookie(c *http.Cookie) *Request {
 	return s
 }
 
+// AddCookies adds some cookie to the request at once.
+func (s *Request) AddCookies(cs ...*http.Cookie) *Request {
+	if s.Err == nil {
+		for _, c := range cs {
+			s.Request.AddCookie(c)
+		}
+	}
+	return s
+}
+
 // SetHeader sets the header entries associated with key
 // to the single element value.
 func (s *Request) AddHeader(key, value string) *Request {

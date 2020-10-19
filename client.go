@@ -27,9 +27,8 @@ type ReqError struct {
 var ReqRejectedErr = errors.New("request is rejected")
 
 type Client struct {
-	cli        *http.Client
-	middleware []Middleware
-	handler    Handler
+	cli     *http.Client
+	handler Handler
 }
 
 func NewClient(m ...Middleware) *Client {
@@ -55,18 +54,15 @@ func NewClient(m ...Middleware) *Client {
 				return nil
 			},
 		},
-		middleware: []Middleware{},
 	}
 	c.handler = basicHttpDo(c, nil)
 	c.Use(m...)
 	return c
 }
 
-func (s *Client) Use(m ...Middleware) *Client {
-	s.middleware = append(s.middleware, m...)
-	//s.handler = basicHttpDo(s, nil)
-	for i := 0; i < len(s.middleware); i++ {
-		s.handler = s.middleware[i](s, s.handler)
+func (s *Client) Use(mid ...Middleware) *Client {
+	for _, m := range mid {
+		s.handler = m(s, s.handler)
 	}
 	return s
 }

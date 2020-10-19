@@ -118,8 +118,6 @@ func (s *Response) BindXML(i interface{}) error {
 	return xml.Unmarshal(s.Body, i)
 }
 
-// TODO Bind xml,json
-
 //func (s *Response) Format(f fmt.State, c rune) {
 //	if s == nil {
 //		fmt.Print(nil)

@@ -36,13 +36,14 @@ func WithDebug() Middleware {
 func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			if data, ok := ca.Get(req.URL.String()); ok {
+			hash := GetRequestHash(req)
+			if data, ok := ca.Get(fmt.Sprint(hash)); ok {
 				resp := data.(Response)
 				return &resp
 			}
 			res := h(req)
 			if res.Err == nil {
-				ca.Set(req.URL.String(), *res, cache.DefaultExpiration)
+				ca.Set(fmt.Sprint(hash), *res, cache.DefaultExpiration)
 			}
 			return res
 		}

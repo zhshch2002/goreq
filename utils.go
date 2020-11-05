@@ -76,9 +76,11 @@ func GetRequestHash(r *Request) [md5.Size]byte {
 	CookieStr := strings.Join(Cookie, "&")
 
 	data := []byte(strings.Join([]string{UrtStr, HeaderStr, CookieStr}, "@#@"))
-	if br, err := r.GetBody(); err == nil {
-		if b, err := ioutil.ReadAll(br); err == nil {
-			data = append(data, b...)
+	if r.GetBody != nil {
+		if br, err := r.GetBody(); err == nil {
+			if b, err := ioutil.ReadAll(br); err == nil {
+				data = append(data, b...)
+			}
 		}
 	}
 	has := md5.Sum(data)

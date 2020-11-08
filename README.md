@@ -3,7 +3,7 @@
 ![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg)
 [![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
 
-[中文文档](https://gospider.athorx.com/)
+[中文文档](https://gospider.xzhsh.ch//)
 
 易用于网页、API 环境下的 Golang HTTP Client 封装库。
 

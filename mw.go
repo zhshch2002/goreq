@@ -42,7 +42,7 @@ func WithCache(ca *cache.Cache) Middleware {
 				return &resp
 			}
 			res := h(req)
-			if res.Err == nil {
+			if res.Err == nil && res.StatusCode == http.StatusOK {
 				ca.Set(fmt.Sprint(hash), *res, cache.DefaultExpiration)
 			}
 			return res

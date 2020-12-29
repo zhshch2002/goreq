@@ -36,14 +36,18 @@ func TestWithCache(t *testing.T) {
 		i += 1
 	}))
 	defer ts.Close()
-	c := NewClient()
-	c.Use(WithCache(cache.New(10*time.Second, 10*time.Second)))
-	a, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(c).Do().Resp()
+	cli := NewClient()
+	cli.Use(WithCache(cache.New(10*time.Second, 10*time.Second)))
+	a, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
-	b, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(c).Do().Resp()
+	b, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
 	fmt.Println(a.Text, b.Text)
 	assert.Equal(t, a.Text, b.Text)
+	c, err := Post(ts.URL).NoCache().SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
+	assert.NoError(t, err)
+	fmt.Println(a.Text, c.Text)
+	assert.NotEqual(t, a.Text, c.Text)
 }
 
 func TestWithRandomUA(t *testing.T) {

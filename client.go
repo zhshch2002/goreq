@@ -1,7 +1,6 @@
 package goreq
 
 import (
-	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -38,7 +37,7 @@ func NewClient(m ...Middleware) *Client {
 			Jar: j,
 			Transport: &http.Transport{
 				Proxy: func(req *http.Request) (*url.URL, error) {
-					if addr, ok := req.Context().Value("proxy").(string); ok && addr != "" {
+					if addr, ok := req.Context().Value("Proxy").(string); ok && addr != "" {
 						return url.Parse(addr)
 					}
 					return nil, nil
@@ -94,10 +93,6 @@ func basicHttpDo(c *Client, next Handler) Handler {
 			Text: "",
 			Body: []byte{},
 			Err:  req.Err,
-		}
-
-		if req.ProxyURL != "" {
-			req.Request = req.Request.WithContext(context.WithValue(req.Request.Context(), "proxy", req.ProxyURL))
 		}
 
 		resp.Response, resp.Err = c.cli.Do(req.Request)

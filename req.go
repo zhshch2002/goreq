@@ -20,7 +20,6 @@ func NewRequest(method, urladdr string) *Request {
 	return &Request{
 		Request:    req,
 		RespEncode: "",
-		ProxyURL:   "",
 		client:     DefaultClient,
 		Err:        err,
 		Debug:      false,
@@ -61,8 +60,6 @@ func Patch(urladdr string) *Request {
 // Request is a object of HTTP request
 type Request struct {
 	*http.Request
-	// ProxyURL is the proxy address that handles the request
-	ProxyURL string
 
 	RespEncode string
 
@@ -88,7 +85,12 @@ func (s *Request) SetTimeout(t time.Duration) *Request {
 }
 
 func (s *Request) SetProxy(urladdr string) *Request {
-	s.ProxyURL = urladdr
+	s.Request = s.Request.WithContext(context.WithValue(s.Request.Context(), "Proxy", urladdr))
+	return s
+}
+
+func (s *Request) NoCache() *Request {
+	s.Request = s.Request.WithContext(context.WithValue(s.Request.Context(), "NO_CACHE", struct{}{}))
 	return s
 }
 
@@ -139,7 +141,7 @@ func (s *Request) AddHeaders(v map[string]string) *Request {
 	return s
 }
 
-// SetProxy sets user-agent url of request header.
+// SetUA sets user-agent url of request header.
 func (s *Request) SetUA(ua string) *Request {
 	if s.Err == nil {
 		s.AddHeader("User-Agent", ua)

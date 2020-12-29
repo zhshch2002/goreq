@@ -36,6 +36,9 @@ func WithDebug() Middleware {
 func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
+			if req.Context().Value("NO_CACHE") != nil {
+				return h(req)
+			}
 			hash := GetRequestHash(req)
 			if data, ok := ca.Get(fmt.Sprint(hash)); ok {
 				resp := data.(Response)
@@ -90,7 +93,7 @@ func WithProxy(p ...string) Middleware {
 	}
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			if req.ProxyURL == "" {
+			if req.Context().Value("Proxy") == nil {
 				if len(p) > 1 {
 					RandSrc += 1
 					rs := rand.NewSource(time.Now().Unix() + RandSrc)

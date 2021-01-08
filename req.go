@@ -73,6 +73,11 @@ type Request struct {
 	Err error
 }
 
+func (s *Request) addContextValue(k, v interface{}) *Request {
+	s.Request = s.WithContext(context.WithValue(s.Request.Context(), k, v))
+	return s
+}
+
 func (s *Request) SetDebug(d bool) *Request {
 	s.Debug = d
 	return s
@@ -84,25 +89,42 @@ func (s *Request) SetTimeout(t time.Duration) *Request {
 	return s
 }
 
+type ctxProxyType struct{}
+
+var ctxProxy = &ctxProxyType{}
+
 func (s *Request) SetProxy(urladdr string) *Request {
-	s.Request = s.Request.WithContext(context.WithValue(s.Request.Context(), "Proxy", urladdr))
-	return s
+	return s.addContextValue(ctxProxy, urladdr)
 }
 
+type ctxNoCacheType struct{}
+
+var ctxNoCache = &ctxNoCacheType{}
+
 func (s *Request) NoCache() *Request {
-	s.Request = s.Request.WithContext(context.WithValue(s.Request.Context(), "NO_CACHE", struct{}{}))
-	return s
+	return s.addContextValue(ctxNoCache, struct{}{})
+}
+
+type ctxCacheExpirationType struct{}
+
+var ctxCacheExpiration = &ctxCacheExpirationType{}
+
+func (s *Request) SetCacheExpiration(e time.Duration) *Request {
+	return s.addContextValue(ctxCacheExpiration, struct{}{})
+}
+
+type ctxCheckRedirectType struct{}
+
+var ctxCheckRedirect = &ctxCheckRedirectType{}
+
+func (s *Request) SetCheckRedirect(fn func(req *http.Request, via []*http.Request) error) *Request {
+	return s.addContextValue(ctxCheckRedirect, fn)
 }
 
 func (s *Request) DisableRedirect() *Request {
 	s.SetCheckRedirect(func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	})
-	return s
-}
-
-func (s *Request) SetCheckRedirect(fn func(req *http.Request, via []*http.Request) error) *Request {
-	s.Request = s.WithContext(context.WithValue(s.Context(), "CheckRedirect", fn))
 	return s
 }
 

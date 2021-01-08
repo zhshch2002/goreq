@@ -36,7 +36,7 @@ func WithDebug() Middleware {
 func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
-			if req.Context().Value("NO_CACHE") != nil {
+			if req.Context().Value(ctxNoCache) != nil {
 				return h(req)
 			}
 			hash := GetRequestHash(req)
@@ -46,7 +46,11 @@ func WithCache(ca *cache.Cache) Middleware {
 			}
 			res := h(req)
 			if res.Err == nil && res.StatusCode == http.StatusOK {
-				ca.Set(fmt.Sprint(hash), *res, cache.DefaultExpiration)
+				e := cache.DefaultExpiration
+				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
+					e = s
+				}
+				ca.Set(fmt.Sprint(hash), *res, e)
 			}
 			return res
 		}

@@ -37,14 +37,14 @@ func NewClient(m ...Middleware) *Client {
 			Jar: j,
 			Transport: &http.Transport{
 				Proxy: func(req *http.Request) (*url.URL, error) {
-					if addr, ok := req.Context().Value("Proxy").(string); ok && addr != "" {
+					if addr, ok := req.Context().Value(ctxProxy).(string); ok && addr != "" {
 						return url.Parse(addr)
 					}
 					return nil, nil
 				},
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if fn, ok := req.Context().Value("CheckRedirect").(func(*http.Request, []*http.Request) error); ok && fn != nil {
+				if fn, ok := req.Context().Value(ctxCheckRedirect).(func(*http.Request, []*http.Request) error); ok && fn != nil {
 					return fn(req, via)
 				}
 				if len(via) >= 10 {

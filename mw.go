@@ -45,7 +45,7 @@ func WithCache(ca *cache.Cache) Middleware {
 				return &resp
 			}
 			res := h(req)
-			if res.Err == nil && res.StatusCode == http.StatusOK {
+			if res.Err == nil && res.StatusCode < 400 {
 				e := cache.DefaultExpiration
 				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
 					e = s

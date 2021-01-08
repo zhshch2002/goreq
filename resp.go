@@ -18,8 +18,8 @@ import (
 type Response struct {
 	*http.Response
 	// Body is the content of the Response
-	Body         []byte
-	NoDecodeBody []byte
+	Body           []byte
+	NotDecodedBody []byte
 	// Text is the content of the Response parsed as string
 	Text string
 	// Request is the Req object from goribot of the response.Tip: there is another Request attr come from *http.Response
@@ -65,7 +65,7 @@ func (s *Response) DecodeAndParse() error {
 	if len(s.Body) == 0 {
 		return nil
 	}
-	s.NoDecodeBody = s.Body
+	s.NotDecodedBody = s.Body
 	contentType := strings.ToLower(s.Header.Get("Content-Type"))
 	if strings.Contains(contentType, "text/") ||
 		strings.Contains(contentType, "/json") {
@@ -117,42 +117,6 @@ func (s *Response) BindXML(i interface{}) error {
 	}
 	return xml.Unmarshal(s.Body, i)
 }
-
-//func (s *Response) Format(f fmt.State, c rune) {
-//	if s == nil {
-//		fmt.Print(nil)
-//		return
-//	}
-//	if s.Response == nil {
-//		fmt.Print(nil, s.Err)
-//		return
-//	}
-//	if s.Err != nil {
-//		fmt.Println("response error", s.Err)
-//		return
-//	}
-//
-//	if f.Flag('+') {
-//		fmt.Println(s.Proto, s.Status)
-//		for k, v := range s.Header {
-//			for _, a := range v {
-//				fmt.Println(k+":", a)
-//			}
-//		}
-//		fmt.Println("")
-//		if s.Text != "" {
-//			fmt.Println(s.Text)
-//		} else {
-//			fmt.Println(s.Body)
-//		}
-//	} else {
-//		if s.Text != "" {
-//			fmt.Print(s.Proto, " ", s.Status, " ", s.Text)
-//		} else {
-//			fmt.Print(s.Proto, " ", s.Status, " ", s.Body)
-//		}
-//	}
-//}
 
 func encodeBytes(b []byte, contentType string) ([]byte, error) {
 	r, err := charset.NewReader(bytes.NewReader(b), contentType)

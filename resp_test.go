@@ -28,7 +28,7 @@ func init() {
 
 func TestResponse_DecodeAndParse(t *testing.T) {
 	resp := Get("http://stock.10jqka.com.cn/zhuanti/hlw_list/").Do()
-	assert.False(t, utf8.Valid(resp.NoDecodeBody))
+	assert.False(t, utf8.Valid(resp.NotDecodedBody))
 	assert.True(t, utf8.Valid(resp.Body))
 }
 

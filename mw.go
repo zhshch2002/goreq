@@ -3,6 +3,7 @@ package goreq
 import (
 	"fmt"
 	"github.com/patrickmn/go-cache"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -71,7 +72,7 @@ func WithRetry(maxTimes int, isRespOk func(*Response) bool) Middleware {
 				}
 				if (res.Err != nil || !ok) && res.Req.Err == nil {
 					if req.Debug {
-						fmt.Println("[Retry", i, "times] got error on request", req.URL, res.Err)
+						log.Println("[Retry", i, "times] got error on request", req.URL, res.Err)
 					}
 					continue
 				} else {

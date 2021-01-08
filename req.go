@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -22,7 +23,7 @@ func NewRequest(method, urladdr string) *Request {
 		RespEncode: "",
 		client:     DefaultClient,
 		Err:        err,
-		Debug:      false,
+		Debug:      Debug,
 		callback: func(resp *Response) *Response {
 			return resp
 		},
@@ -130,18 +131,14 @@ func (s *Request) DisableRedirect() *Request {
 
 // AddCookie adds a cookie to the request.
 func (s *Request) AddCookie(c *http.Cookie) *Request {
-	if s.Err == nil {
-		s.Request.AddCookie(c)
-	}
+	s.Request.AddCookie(c)
 	return s
 }
 
 // AddCookies adds some cookie to the request at once.
 func (s *Request) AddCookies(cs ...*http.Cookie) *Request {
-	if s.Err == nil {
-		for _, c := range cs {
-			s.Request.AddCookie(c)
-		}
+	for _, c := range cs {
+		s.Request.AddCookie(c)
 	}
 	return s
 }
@@ -149,114 +146,94 @@ func (s *Request) AddCookies(cs ...*http.Cookie) *Request {
 // SetHeader sets the header entries associated with key
 // to the single element value.
 func (s *Request) AddHeader(key, value string) *Request {
-	if s.Err == nil {
-		s.Request.Header.Add(key, value)
-	}
+	s.Request.Header.Add(key, value)
 	return s
 }
 func (s *Request) AddHeaders(v map[string]string) *Request {
-	if s.Err == nil {
-		for k, v := range v {
-			s.AddHeader(k, v)
-		}
+	for k, v := range v {
+		s.AddHeader(k, v)
 	}
 	return s
 }
 
 // SetUA sets user-agent url of request header.
 func (s *Request) SetUA(ua string) *Request {
-	if s.Err == nil {
-		s.AddHeader("User-Agent", ua)
-	}
+	s.AddHeader("User-Agent", ua)
 	return s
 }
 
 // AddParam adds a query param of request url.
 func (s *Request) AddParam(k, v string) *Request {
-	if s.Err == nil {
-		if len(s.Request.URL.RawQuery) > 0 {
-			s.Request.URL.RawQuery += "&"
-		}
-		s.Request.URL.RawQuery += url.QueryEscape(k) + "=" + url.QueryEscape(v)
+	if len(s.Request.URL.RawQuery) > 0 {
+		s.Request.URL.RawQuery += "&"
 	}
+	s.Request.URL.RawQuery += url.QueryEscape(k) + "=" + url.QueryEscape(v)
 	return s
 }
 func (s *Request) AddParams(v map[string]string) *Request {
-	if s.Err == nil {
-		for k, v := range v {
-			s.AddParam(k, v)
-		}
+	for k, v := range v {
+		s.AddParam(k, v)
 	}
 	return s
 }
 
 func (s *Request) SetBasicAuth(username, password string) *Request {
-	if s.Err == nil {
-		s.Request.SetBasicAuth(username, password)
-	}
+	s.Request.SetBasicAuth(username, password)
 	return s
 }
 
 func (s *Request) SetBody(b io.Reader) *Request {
-	if s.Err == nil {
-		rc, ok := b.(io.ReadCloser)
-		if !ok && b != nil {
-			rc = ioutil.NopCloser(b)
-		}
-		s.Request.Body = rc
+	rc, ok := b.(io.ReadCloser)
+	if !ok && b != nil {
+		rc = ioutil.NopCloser(b)
+	}
+	s.Request.Body = rc
 
-		switch v := b.(type) {
-		case *bytes.Buffer:
-			s.ContentLength = int64(v.Len())
-			buf := v.Bytes()
-			s.GetBody = func() (io.ReadCloser, error) {
-				r := bytes.NewReader(buf)
-				return ioutil.NopCloser(r), nil
-			}
-		case *bytes.Reader:
-			s.ContentLength = int64(v.Len())
-			snapshot := *v
-			s.GetBody = func() (io.ReadCloser, error) {
-				r := snapshot
-				return ioutil.NopCloser(&r), nil
-			}
-		case *strings.Reader:
-			s.ContentLength = int64(v.Len())
-			snapshot := *v
-			s.GetBody = func() (io.ReadCloser, error) {
-				r := snapshot
-				return ioutil.NopCloser(&r), nil
-			}
-		default:
+	switch v := b.(type) {
+	case *bytes.Buffer:
+		s.ContentLength = int64(v.Len())
+		buf := v.Bytes()
+		s.GetBody = func() (io.ReadCloser, error) {
+			r := bytes.NewReader(buf)
+			return ioutil.NopCloser(r), nil
 		}
+	case *bytes.Reader:
+		s.ContentLength = int64(v.Len())
+		snapshot := *v
+		s.GetBody = func() (io.ReadCloser, error) {
+			r := snapshot
+			return ioutil.NopCloser(&r), nil
+		}
+	case *strings.Reader:
+		s.ContentLength = int64(v.Len())
+		snapshot := *v
+		s.GetBody = func() (io.ReadCloser, error) {
+			r := snapshot
+			return ioutil.NopCloser(&r), nil
+		}
+	default:
 	}
 	return s
 }
 func (s *Request) SetRawBody(b []byte) *Request {
-	if s.Err == nil {
-		s.SetBody(bytes.NewReader(b))
-	}
+	s.SetBody(bytes.NewReader(b))
 	return s
 }
 func (s *Request) SetFormBody(v map[string]string) *Request {
-	if s.Err == nil {
-		var u url.URL
-		q := u.Query()
-		for k, v := range v {
-			q.Add(k, v)
-		}
-		s.SetRawBody([]byte(q.Encode()))
-		s.AddHeader("Content-Type", "application/x-www-form-urlencoded")
+	var u url.URL
+	q := u.Query()
+	for k, v := range v {
+		q.Add(k, v)
 	}
+	s.SetRawBody([]byte(q.Encode()))
+	s.AddHeader("Content-Type", "application/x-www-form-urlencoded")
 	return s
 }
 func (s *Request) SetJsonBody(v interface{}) *Request {
-	if s.Err == nil {
-		body, err := json.Marshal(v)
-		s.SetRawBody(body)
-		s.Err = err
-		s.AddHeader("Content-Type", "application/json")
-	}
+	body, err := json.Marshal(v)
+	s.SetRawBody(body)
+	s.Err = err
+	s.AddHeader("Content-Type", "application/json")
 	return s
 }
 
@@ -276,56 +253,60 @@ func escapeQuotes(s string) string {
 }
 
 func (s *Request) SetMultipartBody(data ...interface{}) *Request {
-	if s.Err == nil {
-		buff := bytes.NewBuffer([]byte{})
-		wr := multipart.NewWriter(buff)
-		for _, v := range data {
-			switch v.(type) {
-			case FormField:
-				s.Err = wr.WriteField(v.(FormField).Name, v.(FormField).Value)
-				if s.Err != nil {
-					if s.Debug {
-						fmt.Println(s.Err)
-					}
-					return s
-				}
-			case FormFile:
-				var w io.Writer
-				h := make(textproto.MIMEHeader)
-				h.Set("Content-Disposition",
-					fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-						escapeQuotes(v.(FormFile).FieldName), escapeQuotes(v.(FormFile).FieldName)))
-				if v.(FormFile).ContentType != "" {
-					h.Set("Content-Type", v.(FormFile).ContentType)
-				} else {
-					h.Set("Content-Type", "application/octet-stream")
-				}
-				w, s.Err = wr.CreatePart(h)
-				if s.Err != nil {
-					if s.Debug {
-						fmt.Println(s.Err)
-					}
-					return s
-				}
-				_, s.Err = io.Copy(w, v.(FormFile).File)
-				if s.Err != nil {
-					if s.Debug {
-						fmt.Println(s.Err)
-					}
-					return s
-				}
-			}
+	if s.Err != nil {
+		if s.Debug {
+			log.Println("request has error", s.Err)
 		}
-		s.Err = wr.Close()
-		if s.Err != nil {
-			if s.Debug {
-				fmt.Println(s.Err)
-			}
-			return s
-		}
-		s.SetBody(buff)
-		s.Header.Set("Content-Type", wr.FormDataContentType())
+		s.Err = nil
 	}
+	buff := bytes.NewBuffer([]byte{})
+	wr := multipart.NewWriter(buff)
+	for _, v := range data {
+		switch v.(type) {
+		case FormField:
+			s.Err = wr.WriteField(v.(FormField).Name, v.(FormField).Value)
+			if s.Err != nil {
+				if s.Debug {
+					log.Println("set multipart FormField body error", s.Err)
+				}
+				return s
+			}
+		case FormFile:
+			var w io.Writer
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition",
+				fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+					escapeQuotes(v.(FormFile).FieldName), escapeQuotes(v.(FormFile).FieldName)))
+			if v.(FormFile).ContentType != "" {
+				h.Set("Content-Type", v.(FormFile).ContentType)
+			} else {
+				h.Set("Content-Type", "application/octet-stream")
+			}
+			w, s.Err = wr.CreatePart(h)
+			if s.Err != nil {
+				if s.Debug {
+					log.Println("set multipart body FormFile error", s.Err)
+				}
+				return s
+			}
+			_, s.Err = io.Copy(w, v.(FormFile).File)
+			if s.Err != nil {
+				if s.Debug {
+					log.Println("set multipart body FormFile error", s.Err)
+				}
+				return s
+			}
+		}
+	}
+	s.Err = wr.Close()
+	if s.Err != nil {
+		if s.Debug {
+			log.Println("set multipart body FormFile error", s.Err)
+		}
+		return s
+	}
+	s.SetBody(buff)
+	s.Header.Set("Content-Type", wr.FormDataContentType())
 	return s
 }
 
@@ -346,31 +327,3 @@ func (s *Request) Do() *Response {
 func (s *Request) String() string {
 	return s.URL.String()
 }
-
-//func (s *Request) Format(f fmt.State, c rune) {
-//	if s == nil {
-//		fmt.Print(nil)
-//		return
-//	}
-//	if s.Err != nil {
-//		fmt.Println("request error", s.Err)
-//		return
-//	}
-//
-//	if f.Flag('+') {
-//		fmt.Println(s.Method, s.URL.Path, s.Proto)
-//		for k, v := range s.Header {
-//			for _, a := range v {
-//				fmt.Println(k+":", a)
-//			}
-//		}
-//		if r, err := s.GetBody(); err == nil {
-//			if b, err := ioutil.ReadAll(r); err == nil {
-//				fmt.Print("\n", b, "\n")
-//			}
-//
-//		}
-//	} else {
-//		fmt.Println(s.Method, s.URL)
-//	}
-//}

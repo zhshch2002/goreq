@@ -10,7 +10,7 @@ import (
 
 var DefaultClient = NewClient()
 
-var Debug = false //TODO
+var Debug = false
 
 func Do(req *Request) *Response {
 	return DefaultClient.Do(req)
@@ -92,7 +92,6 @@ func basicHttpDo(c *Client, next Handler) Handler {
 			Req:  req,
 			Text: "",
 			Body: []byte{},
-			Err:  req.Err,
 		}
 
 		resp.Response, resp.Err = c.cli.Do(req.Request)

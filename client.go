@@ -19,7 +19,7 @@ func Do(req *Request) *Response {
 type Handler func(*Request) *Response
 type Middleware func(*Client, Handler) Handler
 
-type ReqError struct {
+type RequestError struct {
 	error
 }
 
@@ -70,7 +70,7 @@ func (s *Client) Do(req *Request) *Response {
 	if req.Err != nil {
 		return &Response{
 			Req: req,
-			Err: ReqError{req.Err},
+			Err: RequestError{req.Err},
 		}
 	}
 	res := s.handler(req)

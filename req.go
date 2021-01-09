@@ -111,7 +111,7 @@ type ctxCacheExpirationType struct{}
 var ctxCacheExpiration = &ctxCacheExpirationType{}
 
 func (s *Request) SetCacheExpiration(e time.Duration) *Request {
-	return s.addContextValue(ctxCacheExpiration, struct{}{})
+	return s.addContextValue(ctxCacheExpiration, e)
 }
 
 type ctxCheckRedirectType struct{}
@@ -257,7 +257,7 @@ func (s *Request) SetMultipartBody(data ...interface{}) *Request {
 		if s.Debug {
 			log.Println("request has error", s.Err)
 		}
-		s.Err = nil
+		return s
 	}
 	buff := bytes.NewBuffer([]byte{})
 	wr := multipart.NewWriter(buff)

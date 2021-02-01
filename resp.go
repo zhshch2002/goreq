@@ -17,14 +17,11 @@ import (
 // Response is a object of HTTP response
 type Response struct {
 	*http.Response
-	// Body is the content of the Response
 	Body           []byte
 	NotDecodedBody []byte
-	// Text is the content of the Response parsed as string
-	Text string
-	// Request is the Req object from goribot of the response.Tip: there is another Request attr come from *http.Response
-	Req *Request
-	Err error
+	Text           string
+	Req            *Request
+	Err            error
 }
 
 func (s *Response) Resp() (*Response, error) {

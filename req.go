@@ -143,7 +143,7 @@ func (s *Request) AddCookies(cs ...*http.Cookie) *Request {
 	return s
 }
 
-// SetHeader sets the header entries associated with key
+// AddHeader sets the header entries associated with key
 // to the single element value.
 func (s *Request) AddHeader(key, value string) *Request {
 	s.Request.Header.Add(key, value)

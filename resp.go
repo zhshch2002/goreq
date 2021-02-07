@@ -32,11 +32,23 @@ func (s *Response) Txt() (string, error) {
 	return s.Text, s.Err
 }
 
+func (s *Response) RespAndTxt() (*Response, string, error) {
+	return s, s.Text, s.Err
+}
+
 func (s *Response) HTML() (*goquery.Document, error) {
 	if s.Err != nil {
 		return nil, s.Err
 	}
 	return goquery.NewDocumentFromReader(bytes.NewReader(s.Body))
+}
+
+func (s *Response) RespAndHTML() (*Response, *goquery.Document, error) {
+	if s.Err != nil {
+		return s, nil, s.Err
+	}
+	h, err := goquery.NewDocumentFromReader(bytes.NewReader(s.Body))
+	return s, h, err
 }
 
 func (s *Response) XML() (*xmlpath.Node, error) {
@@ -46,8 +58,20 @@ func (s *Response) XML() (*xmlpath.Node, error) {
 	return xmlpath.Parse(bytes.NewReader(s.Body))
 }
 
+func (s *Response) RespAndXML() (*Response, *xmlpath.Node, error) {
+	if s.Err != nil {
+		return s, nil, s.Err
+	}
+	x, err := xmlpath.Parse(bytes.NewReader(s.Body))
+	return s, x, err
+}
+
 func (s *Response) JSON() (gjson.Result, error) {
 	return gjson.Parse(s.Text), s.Err
+}
+
+func (s *Response) RespAndJSON() (*Response, gjson.Result, error) {
+	return s, gjson.Parse(s.Text), s.Err
 }
 
 func (s *Response) Error() error {

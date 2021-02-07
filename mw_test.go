@@ -44,10 +44,19 @@ func TestWithCache(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Println(a.Text, b.Text)
 	assert.Equal(t, a.Text, b.Text)
+
 	c, err := Post(ts.URL).NoCache().SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
 	fmt.Println(a.Text, c.Text)
 	assert.NotEqual(t, a.Text, c.Text)
+
+	d, err := Post(ts.URL).SetCacheExpiration(1 * time.Second).SetClient(cli).Do().Resp()
+	assert.NoError(t, err)
+	time.Sleep(3 * time.Second)
+	e, err := Post(ts.URL).SetCacheExpiration(1 * time.Second).SetClient(cli).Do().Resp()
+	assert.NoError(t, err)
+	fmt.Println(d.Text, e.Text)
+	assert.NotEqual(t, d.Text, e.Text)
 }
 
 func TestWithRandomUA(t *testing.T) {

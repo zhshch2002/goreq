@@ -2,6 +2,7 @@ package goreq
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -23,7 +24,7 @@ func ModifyLink(url string) string {
 }
 
 // GetRequestHash return a hash of url,header,cookie and body data from a request
-func GetRequestHash(r *Request) [md5.Size]byte {
+func GetRequestHash(r *Request) string {
 	u := r.URL
 	UrtStr := u.Scheme + "://"
 	if u.User != nil {
@@ -83,6 +84,7 @@ func GetRequestHash(r *Request) [md5.Size]byte {
 			}
 		}
 	}
-	has := md5.Sum(data)
-	return has
+	h := md5.New()
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
 }

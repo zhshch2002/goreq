@@ -41,7 +41,7 @@ func WithCache(ca *cache.Cache) Middleware {
 				return h(req)
 			}
 			hash := GetRequestHash(req)
-			if data, ok := ca.Get(fmt.Sprint(hash)); ok {
+			if data, ok := ca.Get(hash); ok {
 				resp := data.(Response)
 				return &resp
 			}
@@ -51,7 +51,7 @@ func WithCache(ca *cache.Cache) Middleware {
 				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
 					e = s
 				}
-				ca.Set(fmt.Sprint(hash), *res, e)
+				ca.Set(hash, *res, e)
 			}
 			return res
 		}

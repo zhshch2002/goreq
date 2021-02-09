@@ -1,6 +1,7 @@
 package goreq
 
 import (
+	"crypto/tls"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -26,14 +27,14 @@ type RequestError struct {
 var ReqRejectedErr = errors.New("request is rejected")
 
 type Client struct {
-	cli     *http.Client
+	Client  *http.Client
 	handler Handler
 }
 
 func NewClient(m ...Middleware) *Client {
 	j, _ := cookiejar.New(nil)
 	c := &Client{
-		cli: &http.Client{
+		Client: &http.Client{
 			Jar: j,
 			Transport: &http.Transport{
 				Proxy: func(req *http.Request) (*url.URL, error) {
@@ -42,6 +43,7 @@ func NewClient(m ...Middleware) *Client {
 					}
 					return nil, nil
 				},
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if fn, ok := req.Context().Value(ctxCheckRedirect).(func(*http.Request, []*http.Request) error); ok && fn != nil {
@@ -94,7 +96,7 @@ func basicHttpDo(c *Client, next Handler) Handler {
 			Body: []byte{},
 		}
 
-		resp.Response, resp.Err = c.cli.Do(req.Request)
+		resp.Response, resp.Err = c.Client.Do(req.Request)
 		if resp.Err != nil {
 			return resp
 		}

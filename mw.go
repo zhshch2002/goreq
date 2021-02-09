@@ -15,7 +15,7 @@ func WithCookie(urlAddr string, cookies ...*http.Cookie) Middleware {
 	return func(x *Client, h Handler) Handler {
 		u, err := url.Parse(urlAddr)
 		if err == nil {
-			x.cli.Jar.SetCookies(u, cookies)
+			x.Client.Jar.SetCookies(u, cookies)
 		} else {
 			fmt.Println("add cookie to jar fail", err)
 		}

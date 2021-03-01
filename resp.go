@@ -22,6 +22,8 @@ type Response struct {
 	Text           string
 	Req            *Request
 	Err            error
+	IsFromCache    bool
+	RemoveCache    func()
 }
 
 func (s *Response) Resp() (*Response, error) {

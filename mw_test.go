@@ -32,7 +32,7 @@ func TestWithRetry(t *testing.T) {
 func TestWithCache(t *testing.T) {
 	i := 1
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintln(w, i)
+		_, _ = fmt.Fprint(w, i)
 		i += 1
 	}))
 	defer ts.Close()
@@ -40,15 +40,24 @@ func TestWithCache(t *testing.T) {
 	cli.Use(WithCache(cache.New(10*time.Second, 10*time.Second)))
 	a, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
+	assert.False(t, a.IsFromCache)
 	b, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
 	fmt.Println(a.Text, b.Text)
 	assert.Equal(t, a.Text, b.Text)
+	assert.True(t, b.IsFromCache)
 
 	c, err := Post(ts.URL).NoCache().SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)
 	fmt.Println(a.Text, c.Text)
 	assert.NotEqual(t, a.Text, c.Text)
+
+	b.RemoveCache()
+	f, err := Post(ts.URL).SetRawBody([]byte("test")).SetClient(cli).Do().Resp()
+	assert.NoError(t, err)
+	fmt.Println(b.Text, f.Text)
+	assert.NotEqual(t, b.Text, f.Text)
+	assert.False(t, f.IsFromCache)
 
 	d, err := Post(ts.URL).SetCacheExpiration(1 * time.Second).SetClient(cli).Do().Resp()
 	assert.NoError(t, err)

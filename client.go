@@ -82,7 +82,7 @@ func (s *Client) Do(req *Request) *Response {
 			Err: ReqRejectedErr,
 		}
 	}
-	if res.Err == nil {
+	if len(res.NotDecodedBody) == 0 && res.Err == nil {
 		res.Err = res.DecodeAndParse()
 	}
 	return res
@@ -91,9 +91,10 @@ func (s *Client) Do(req *Request) *Response {
 func basicHttpDo(c *Client, next Handler) Handler {
 	return func(req *Request) *Response {
 		resp := &Response{
-			Req:  req,
-			Text: "",
-			Body: []byte{},
+			Req:         req,
+			Text:        "",
+			Body:        []byte{},
+			IsFromCache: false,
 		}
 
 		resp.Response, resp.Err = c.Client.Do(req.Request)
@@ -105,6 +106,9 @@ func basicHttpDo(c *Client, next Handler) Handler {
 		resp.Body, resp.Err = ioutil.ReadAll(resp.Response.Body)
 		if resp.Err != nil {
 			return resp
+		}
+		if resp.Err == nil {
+			resp.Err = resp.DecodeAndParse()
 		}
 		return resp
 	}

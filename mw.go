@@ -34,6 +34,16 @@ func WithDebug() Middleware {
 	}
 }
 
+type cacheData struct {
+	status     string // e.g. "200 OK"
+	statusCode int    // e.g. 200
+	proto      string // e.g. "HTTP/1.0"
+	protoMajor int    // e.g. 1
+	protoMinor int    // e.g. 0
+	header     http.Header
+	body       []byte
+}
+
 func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
@@ -42,16 +52,41 @@ func WithCache(ca *cache.Cache) Middleware {
 			}
 			hash := GetRequestHash(req)
 			if data, ok := ca.Get(hash); ok {
-				resp := data.(Response)
+				data := data.(cacheData)
+				resp := Response{
+					Response: &http.Response{
+						Status:     data.status,
+						StatusCode: data.statusCode,
+						Proto:      data.proto,
+						ProtoMajor: data.protoMajor,
+						ProtoMinor: data.protoMinor,
+						Header:     data.header,
+					},
+					Body:        data.body,
+					IsFromCache: true,
+					RemoveCache: func() {
+						ca.Delete(hash)
+					},
+				}
+				_ = resp.DecodeAndParse()
 				return &resp
 			}
 			res := h(req)
-			if res.Err == nil && res.StatusCode < 400 {
+			if res.Err == nil {
 				e := cache.DefaultExpiration
+				data := cacheData{
+					status:     res.Status,
+					statusCode: res.StatusCode,
+					proto:      res.Proto,
+					protoMajor: res.ProtoMajor,
+					protoMinor: res.ProtoMinor,
+					header:     res.Header,
+					body:       res.NotDecodedBody,
+				}
 				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
 					e = s
 				}
-				ca.Set(hash, *res, e)
+				ca.Set(hash, data, e)
 			}
 			return res
 		}

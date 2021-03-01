@@ -11,7 +11,8 @@ require (
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/gjson v1.6.8
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	github.com/tidwall/pretty v1.1.0 // indirect
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/xmlpath.v2 v2.0.0-20150820204837-860cbeca3ebc
 )

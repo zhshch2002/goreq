@@ -92,10 +92,11 @@ func WithCache(ca *cache.Cache) Middleware {
 					header:     resp.Header,
 					body:       resp.NotDecodedBody,
 				}
-				resp.RemoveCache = func() {
-					ca.Delete(hash)
-				}
 				ca.Set(hash, data, e)
+			}
+
+			resp.RemoveCache = func() {
+				ca.Delete(hash)
 			}
 
 			return resp

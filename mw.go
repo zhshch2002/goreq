@@ -48,9 +48,13 @@ func WithCache(ca *cache.Cache) Middleware {
 	return func(x *Client, h Handler) Handler {
 		return func(req *Request) *Response {
 			if req.Context().Value(ctxNoCache) != nil {
-				return h(req)
+				resp := h(req)
+				resp.RemoveCache = func() {}
+				return resp
 			}
+
 			hash := GetRequestHash(req)
+
 			if data, ok := ca.Get(hash); ok {
 				data := data.(cacheData)
 				resp := Response{
@@ -71,24 +75,30 @@ func WithCache(ca *cache.Cache) Middleware {
 				_ = resp.DecodeAndParse()
 				return &resp
 			}
-			res := h(req)
-			if res.Err == nil {
+
+			resp := h(req)
+
+			if resp.Err == nil {
 				e := cache.DefaultExpiration
-				data := cacheData{
-					status:     res.Status,
-					statusCode: res.StatusCode,
-					proto:      res.Proto,
-					protoMajor: res.ProtoMajor,
-					protoMinor: res.ProtoMinor,
-					header:     res.Header,
-					body:       res.NotDecodedBody,
-				}
 				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
 					e = s
 				}
+				data := cacheData{
+					status:     resp.Status,
+					statusCode: resp.StatusCode,
+					proto:      resp.Proto,
+					protoMajor: resp.ProtoMajor,
+					protoMinor: resp.ProtoMinor,
+					header:     resp.Header,
+					body:       resp.NotDecodedBody,
+				}
+				resp.RemoveCache = func() {
+					ca.Delete(hash)
+				}
 				ca.Set(hash, data, e)
 			}
-			return res
+
+			return resp
 		}
 	}
 }

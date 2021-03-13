@@ -95,7 +95,15 @@ type ctxProxyType struct{}
 var ctxProxy = &ctxProxyType{}
 
 func (s *Request) SetProxy(urladdr string) *Request {
-	return s.addContextValue(ctxProxy, urladdr)
+	u, err := url.Parse(urladdr)
+	if err != nil {
+		if s.Debug {
+			log.Println("set proxy error:", err)
+		}
+		s.Err = err
+		return s
+	}
+	return s.addContextValue(ctxProxy, u)
 }
 
 type ctxNoCacheType struct{}

@@ -17,8 +17,8 @@ func Do(req *Request) *Response {
 	return DefaultClient.Do(req)
 }
 
-type Handler func(*Request) *Response
 type Middleware func(*Client, Handler) Handler
+type Handler func(*Request) *Response
 
 type RequestError struct {
 	error
@@ -38,8 +38,8 @@ func NewClient(m ...Middleware) *Client {
 			Jar: j,
 			Transport: &http.Transport{
 				Proxy: func(req *http.Request) (*url.URL, error) {
-					if addr, ok := req.Context().Value(ctxProxy).(string); ok && addr != "" {
-						return url.Parse(addr)
+					if addr, ok := req.Context().Value(ctxProxy).(*url.URL); ok && addr != nil {
+						return addr, nil
 					}
 					return nil, nil
 				},

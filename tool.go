@@ -15,10 +15,10 @@ func ModifyLink(url string) string {
 		return url
 	}
 	if strings.HasPrefix(url, ":") {
-		return fmt.Sprintf("http://127.0.0.1%s", url)
+		return fmt.Sprintf("http://localhost%s", url)
 	}
 	if strings.HasPrefix(url, "/") {
-		return fmt.Sprintf("http://127.0.0.1%s", url)
+		return fmt.Sprintf("http://localhost%s", url)
 	}
 	return fmt.Sprintf("http://%s", url)
 }

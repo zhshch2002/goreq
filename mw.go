@@ -39,7 +39,6 @@ func WithCache(ca *cache.Cache) Middleware {
 		return func(req *Request) *Response {
 			if req.Context().Value(ctxNoCache) != nil {
 				resp := h(req)
-				resp.RemoveCache = func() {}
 				return resp
 			}
 
@@ -47,16 +46,12 @@ func WithCache(ca *cache.Cache) Middleware {
 
 			if data, ok := ca.Get(hash); ok {
 				resp := *data.(*Response)
-				resp.IsFromCache = true
+				resp.CacheHash = hash
 				return &resp
 			}
 
 			resp := h(req)
-
-			resp.RemoveCache = func() {
-				ca.Delete(hash)
-			}
-
+			resp.CacheHash = hash
 			if resp.Err == nil {
 				e := cache.DefaultExpiration
 				if s, ok := req.Context().Value(ctxCacheExpiration).(time.Duration); ok {
@@ -64,7 +59,6 @@ func WithCache(ca *cache.Cache) Middleware {
 				}
 				ca.Set(hash, resp, e)
 			}
-
 			return resp
 		}
 	}

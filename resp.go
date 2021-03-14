@@ -21,9 +21,8 @@ type Response struct {
 	NotDecodedBody []byte
 	Text           string
 	Req            *Request
+	CacheHash      string
 	Err            error
-	IsFromCache    bool
-	RemoveCache    func()
 }
 
 func (s *Response) Resp() (*Response, error) {

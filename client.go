@@ -91,10 +91,9 @@ func (s *Client) Do(req *Request) *Response {
 func basicHttpDo(c *Client, next Handler) Handler {
 	return func(req *Request) *Response {
 		resp := &Response{
-			Req:         req,
-			Text:        "",
-			Body:        []byte{},
-			IsFromCache: false,
+			Req:  req,
+			Text: "",
+			Body: []byte{},
 		}
 
 		resp.Response, resp.Err = c.Client.Do(req.Request)

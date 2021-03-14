@@ -21,6 +21,6 @@ func TestClient_Use(t *testing.T) {
 			return h(req)
 		}
 	})
-	fmt.Println(c.Do(Get("https://github.com/")).StatusCode)
+	fmt.Println(c.Do(Get("https://httpbin.org/")).StatusCode)
 	assert.Equal(t, 2, m)
 }

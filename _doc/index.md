@@ -1,6 +1,9 @@
 # Goreq
 
-[![goproxycn](https://goproxy.cn/stats/github.com/zhshch2002/goreq/badges/download-count.svg)](https://goproxy.cn) ![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg) [![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
+[![gopkg](https://img.shields.io/badge/go-pkg-blue)](https://pkg.go.dev/github.com/zhshch2002/goreq)
+[![goproxycn](https://goproxy.cn/stats/github.com/zhshch2002/goreq/badges/download-count.svg)](https://goproxy.cn)
+![Go Test](https://github.com/zhshch2002/goreq/workflows/Go%20Test/badge.svg)
+[![codecov](https://codecov.io/gh/zhshch2002/goreq/branch/master/graph/badge.svg)](https://codecov.io/gh/zhshch2002/goreq)
 
 `Goreq`是对标准库`net/http`的包装。目的在于简化HTTP请求和接受数据的初步处理。`Goreq`主要是为了HTML网页和API请求设计的。
 

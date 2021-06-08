@@ -10,9 +10,8 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/stretchr/testify v1.6.1
-	github.com/tidwall/gjson v1.6.8
-	github.com/tidwall/pretty v1.1.0 // indirect
-	golang.org/x/net v0.0.0-20210315170653-34ac3e1c2000
-	golang.org/x/text v0.3.5 // indirect
+	github.com/tidwall/gjson v1.8.0
+	github.com/tidwall/pretty v1.2.0 // indirect
+	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
 	gopkg.in/xmlpath.v2 v2.0.0-20150820204837-860cbeca3ebc
 )
